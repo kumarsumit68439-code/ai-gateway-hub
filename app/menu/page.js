@@ -4,10 +4,12 @@ export const metadata = { title: 'Menu | AI Gateway' };
 
 const items = [
   ['/dashboard', 'D', 'Dashboard', 'Usage overview and your recent requests'],
-  ['/settings#keys', 'K', 'Backend API keys', 'Create, regenerate, restrict and revoke keys'],
-  ['/docs', 'A', 'API Docs', 'Endpoints, examples and security rules'],
+  ['/gateway-keys', 'G', 'AI Gateway keys', 'Create sk-gw keys to call AI models'],
+  ['/backend-keys', 'B', 'Backend keys', 'Create bk-live keys for your website data (Supabase or MongoDB)'],
+  ['/docs', 'A', 'AI API Docs', 'AI endpoints, examples and security rules'],
+  ['/docs/backend', 'E', 'Backend Docs', 'Data store endpoints, examples and limits'],
   ['/models', 'M', 'Live models', 'Free models from Groq, OpenRouter, Gemini and OpenAI'],
-  ['/account', 'C', 'Account check', 'Security score and account details'],
+  ['/account', 'C', 'Account verification', 'Verify your email, security score and account details'],
   ['/profile', 'P', 'Profile', 'Your name, company and bio'],
   ['/settings', 'S', 'Settings', 'Change password and manage sessions'],
 ];

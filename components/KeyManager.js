@@ -47,7 +47,7 @@ function KeyRow({ k, regen, revoke, save }) {
   );
 }
 
-// Create, regenerate, restrict and revoke backend API keys.
+// Create, regenerate, restrict and revoke AI gateway API keys (sk-gw-...).
 export default function KeyManager() {
   const [session, setSession] = useState(null);
   const [keys, setKeys] = useState([]);
@@ -79,7 +79,7 @@ export default function KeyManager() {
   }
 
   async function regen(id) {
-    if (!confirm('Regenerate this key? The old key stops working immediately, so update your backend with the new one.')) return;
+    if (!confirm('Regenerate this key? The old key stops working immediately, so update your server with the new one.')) return;
     setMsg(''); setCopied(false);
     const r = await fetch('/api/keys/' + id + '/regenerate', { method: 'POST', headers: authHeader() });
     const j = await r.json();
@@ -102,9 +102,9 @@ export default function KeyManager() {
   return (
     <div>
       <form className="card" onSubmit={create}>
-        <b>Create a new backend API key</b>
+        <b>Create a new AI Gateway API key</b>
         <p className="mute" style={{ margin: '4px 0' }}>Use the key only on your server. Never put it in frontend code.</p>
-        <input required maxLength={60} placeholder="Key name, e.g. my-app-backend" value={name} onChange={(e) => setName(e.target.value)} />
+        <input required maxLength={60} placeholder="Key name, e.g. my-app-ai" value={name} onChange={(e) => setName(e.target.value)} />
         <button disabled={busy || !session}>Create key</button>
         {msg && <p className="bad">{msg}</p>}
       </form>

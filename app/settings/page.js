@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import KeyManager from '@/components/KeyManager';
 import { sb } from '@/lib/supabase-browser';
 
 export default function Settings() {
@@ -38,17 +37,26 @@ export default function Settings() {
     <div className="wrap">
       <h1>Settings</h1>
       <div className="pills">
-        <a href="#keys">Backend API keys</a>
+        <a href="#keys">API keys</a>
         <a href="#password">Change password</a>
         <a href="#sessions">Sessions</a>
         <Link href="/profile">Profile</Link>
-        <Link href="/account">Account check</Link>
+        <Link href="/account">Account verification</Link>
       </div>
 
       <section id="keys" className="block">
-        <h2>Backend API keys</h2>
-        <p className="mute">Create keys for your own backend, regenerate them if they leak, and lock them to your server IPs. See the <Link href="/docs">API Docs</Link> for usage.</p>
-        <KeyManager />
+        <h2>API keys</h2>
+        <p className="mute">Two kinds of keys, each on its own page. Both are server-side secrets and can be regenerated.</p>
+        <div className="grid" style={{ marginTop: 8 }}>
+          <Link href="/gateway-keys" className="tile">
+            <em>G</em><b>AI Gateway API keys</b>
+            <span>sk-gw-… for calling Groq, OpenRouter, Gemini and OpenAI models.</span>
+          </Link>
+          <Link href="/backend-keys" className="tile">
+            <em>B</em><b>Backend API keys</b>
+            <span>bk-live-… for storing your website&apos;s data in Supabase or MongoDB.</span>
+          </Link>
+        </div>
       </section>
 
       <section id="password" className="block">

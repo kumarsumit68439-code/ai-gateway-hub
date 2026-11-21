@@ -10,15 +10,20 @@ const main = [
   ['/docs', 'API Docs'],
 ];
 
-const menu = [
+const explore = [
   ['/dashboard', 'Dashboard'],
-  ['/docs', 'API Docs'],
+  ['/docs', 'AI API Docs'],
+  ['/docs/backend', 'Backend Docs'],
   ['/models', 'Live Models'],
 ];
+const keysMenu = [
+  ['/gateway-keys', 'AI Gateway keys'],
+  ['/backend-keys', 'Backend keys'],
+];
 const accountMenu = [
-  ['/account', 'Account check'],
+  ['/account', 'Account verification'],
   ['/profile', 'Profile'],
-  ['/settings', 'Settings & API Keys'],
+  ['/settings', 'Settings'],
 ];
 
 export default function Nav() {
@@ -45,7 +50,10 @@ export default function Nav() {
         {open && (
           <div className="panel">
             <small>Explore</small>
-            {menu.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
+            {explore.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
+            <hr />
+            <small>API keys</small>
+            {keysMenu.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
             <hr />
             <small>My account</small>
             {accountMenu.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}

@@ -62,11 +62,11 @@ export async function POST(req) {
 
   return (
     <div className="wrap">
-      <h1>API Docs</h1>
-      <p className="mute">An OpenAI-compatible API. Any OpenAI SDK works by changing the base URL and key.</p>
+      <h1>AI API Docs</h1>
+      <p className="mute">An OpenAI-compatible API. Any OpenAI SDK works by changing the base URL and key. To store your website&apos;s data instead, see the <Link href="/docs/backend">Backend docs</Link>.</p>
 
       <h2>1. Get a key</h2>
-      <p>Open <Link href="/settings#keys">Settings &rarr; Backend API keys</Link> and press <b>Create key</b>. The key looks like <code>sk-gw-...</code> and is shown only once. If it is ever lost or leaked, press <b>Regenerate</b>: the old key stops working immediately and a new one is shown.</p>
+      <p>Verify your email on the <Link href="/account">Account page</Link>, then open <Link href="/gateway-keys">AI Gateway API keys</Link> and press <b>Create key</b>. The key looks like <code>sk-gw-...</code> and is shown only once. If it is ever lost or leaked, press <b>Regenerate</b>: the old key stops working immediately and a new one is shown.</p>
 
       <h2>2. Authentication</h2>
       <pre><code>Authorization: Bearer sk-gw-YOUR_KEY</code></pre>
@@ -78,7 +78,7 @@ export async function POST(req) {
           <li>Store the key in an environment variable on your server, for example <code>GATEWAY_API_KEY</code>. Never put it in frontend code, a public repo or a mobile app.</li>
           <li>Your frontend calls <b>your own backend endpoint</b>; your backend calls this API (example below).</li>
           <li>Browser requests are <b>blocked by default</b>. If a key is ever used from a browser, the request is rejected.</li>
-          <li>Optional: lock a key to your server&apos;s IP addresses in <b>Security</b> under Settings &rarr; Backend API keys.</li>
+          <li>Optional: lock a key to your server&apos;s IP addresses in <b>Security</b> on the AI Gateway keys page.</li>
           <li>Use one key per project, so you can regenerate one without breaking the others.</li>
           <li>Rotate keys regularly and immediately if you suspect a leak.</li>
         </ol>

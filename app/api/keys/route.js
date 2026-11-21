@@ -6,10 +6,12 @@ import { newKey, hashKey } from '@/lib/keys';
 export const dynamic = 'force-dynamic';
 const MAX_KEYS = 10;
 
-// Create a new gateway API key. The full key is returned ONCE.
+// Create a new AI gateway API key. The full key is returned ONCE.
 export async function POST(req) {
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: 'Not logged in.' }, { status: 401 });
+  if (!user.email_confirmed_at)
+    return NextResponse.json({ error: 'Verify your email first (Account page), then create keys.' }, { status: 403 });
 
   let name = '';
   try { name = String((await req.json()).name || '').trim(); } catch {}

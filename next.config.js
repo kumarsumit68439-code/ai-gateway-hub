@@ -15,9 +15,11 @@ const cors = [
 module.exports = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
+  experimental: { serverComponentsExternalPackages: ['mongodb'] },
   async headers() {
     return [
       { source: '/:path*', headers: security },
+      // Only the AI gateway is cross-origin capable. Backend (data) endpoints are server-only.
       { source: '/api/v1/:path*', headers: cors },
     ];
   },

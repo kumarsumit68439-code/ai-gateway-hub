@@ -58,11 +58,11 @@ export async function listOrders() {
       <h1>Backend docs</h1>
       <p className="mute">
         A private JSON data store for your own website&apos;s backend. Data lives in the storage engine you picked when you created the key:
-        <b> Supabase (Postgres)</b> or <b>MongoDB</b>. The endpoints are identical for both.
+        <b> Supabase (Postgres)</b>, <b>MongoDB</b> or <b>Firebase (Firestore)</b>. The endpoints are identical for all three.
       </p>
 
       <h2>1. Get a backend key</h2>
-      <p>Verify your email on the <Link href="/account">Account page</Link>, then open <Link href="/backend-keys">Backend API keys</Link>, choose a name and an engine, and press <b>Create backend key</b>. The key starts with <code>bk-live-</code> and is shown once. If it leaks, press <b>Regenerate</b>: the old key dies instantly and your data is kept.</p>
+      <p>Verify your email on the <Link href="/account">Account page</Link>, then open <Link href="/backend-keys">Backend API keys</Link>, choose a name and an engine, and press <b>Create backend key</b>. A Cloudflare captcha appears at that moment; solve it once and the key is created. The key starts with <code>bk-live-</code> and is shown once. If it leaks, press <b>Regenerate</b>: the old key dies instantly and your data is kept.</p>
 
       <h2>2. Authentication</h2>
       <pre><code>Authorization: Bearer bk-live-YOUR_KEY</code></pre>
@@ -81,7 +81,7 @@ export async function listOrders() {
             <tr><td>DELETE</td><td><code>/api/backend/v1/:collection/:id</code></td><td>Delete a document</td></tr>
           </tbody>
         </table>
-        <p className="mute" style={{ marginBottom: 0 }}>A collection is just a name you choose (<code>users</code>, <code>orders</code>...). It is created automatically on first write. Names use <code>a-z 0-9 _ -</code>, up to 40 characters.</p>
+        <p className="mute" style={{ marginBottom: 0 }}>A collection is just a name you choose (<code>users</code>, <code>orders</code>...). It is created automatically on first write. Names use <code>a-z 0-9 _ -</code>, up to 40 characters. Firebase does not allow arrays inside arrays or names like <code>__name__</code>.</p>
       </div>
 
       <h2>4. Examples</h2>

@@ -4,11 +4,17 @@ import Link from 'next/link';
 import { sb } from '@/lib/supabase-browser';
 
 const fmt = (d) => (d ? new Date(d).toLocaleString() : '-');
+const DBS = [
+  ['supabase', 'Supabase', 'Postgres database, login and email verification'],
+  ['mongodb', 'MongoDB', 'Document database for backend keys'],
+  ['firebase', 'Firebase', 'Firestore database for backend keys'],
+];
 
 export default function Account() {
   const [user, setUser] = useState(null);
   const [keys, setKeys] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [engines, setEngines] = useState(null);
   const [ready, setReady] = useState(false);
   const [note, setNote] = useState(null);
   const [cool, setCool] = useState(0);
@@ -22,6 +28,11 @@ export default function Account() {
       setKeys([...(k.data || []), ...(b.data || [])]);
       const p = await sb().from('profiles').select('display_name').maybeSingle();
       setProfile(p.data);
+      const s = (await sb().auth.getSession()).data.session;
+      if (s) {
+        const r = await fetch('/api/backend-keys', { headers: { Authorization: 'Bearer ' + s.access_token } });
+        if (r.ok) setEngines((await r.json()).engines);
+      }
       setReady(true);
     })();
   }, []);
@@ -72,7 +83,7 @@ export default function Account() {
           <b className={verified ? 'ok' : ''} style={verified ? {} : { color: '#fbbf24' }}>{verified ? '✓ Verified' : 'Not verified'}</b>
         </div>
         {verified ? (
-          <p className="mute" style={{ marginBottom: 0 }}>{user.email} was verified on {fmt(user.email_confirmed_at)}. You can create AI Gateway and Backend keys.</p>
+          <p className="mute" style={{ marginBottom: 0 }}>{user.email} was verified on {fmt(user.email_confirmed_at)}. You can create AI Gateway and Backend keys. A Cloudflare captcha is asked each time you create a key.</p>
         ) : (
           <>
             <p className="mute">Verify <b>{user.email}</b> to unlock creating API keys. We email you a confirmation link.</p>
@@ -84,6 +95,23 @@ export default function Account() {
         )}
         {note?.ok && <p className="ok" style={{ marginBottom: 0 }}>{note.ok}</p>}
         {note?.bad && <p className="bad" style={{ marginBottom: 0 }}>{note.bad}</p>}
+      </div>
+
+      <h2>Database connections</h2>
+      <div className="card">
+        {DBS.map(([id, label, desc]) => {
+          const on = engines ? !!engines[id] : id === 'supabase';
+          return (
+            <div className="check" key={id}>
+              <span className={'tick ' + (on ? 'ok' : 'warn')}>{on ? '✓' : '!'}</span>
+              <div>
+                <b>{label}</b> <span className={on ? 'ok' : 'mute'}>{on ? 'Connected' : 'Not connected yet'}</span>
+                <div className="mute">{desc}</div>
+              </div>
+            </div>
+          );
+        })}
+        <p className="mute" style={{ marginBottom: 0 }}>Backend keys can store data in any connected database. Pick one when you <Link href="/backend-keys">create a backend key</Link>.</p>
       </div>
 
       <div className="card">

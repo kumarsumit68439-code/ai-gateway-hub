@@ -1,4 +1,5 @@
 import './globals.css';
+import './extra.css';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import Nav from '@/components/Nav';
 

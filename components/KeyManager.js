@@ -1,6 +1,7 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { sb } from '@/lib/supabase-browser';
+import Turnstile from '@/components/Turnstile';
 
 const split = (s) => s.split(',').map((x) => x.trim()).filter(Boolean);
 
@@ -48,6 +49,7 @@ function KeyRow({ k, regen, revoke, save }) {
 }
 
 // Create, regenerate, restrict and revoke AI gateway API keys (sk-gw-...).
+// The Cloudflare captcha appears only after you press "Create key", once per new key.
 export default function KeyManager() {
   const [session, setSession] = useState(null);
   const [keys, setKeys] = useState([]);
@@ -56,6 +58,10 @@ export default function KeyManager() {
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [siteKey, setSiteKey] = useState(undefined);
+  const [step, setStep] = useState('idle');
+  const pending = useRef('');
+  const sess = useRef(null);
 
   const load = useCallback(async () => {
     const k = await sb().from('api_keys').select('id,name,key_prefix,request_count,last_used_at,created_at,rotated_at,allowed_ips,allowed_origins').is('revoked_at', null).order('created_at', { ascending: false });
@@ -63,15 +69,24 @@ export default function KeyManager() {
   }, []);
 
   useEffect(() => {
-    sb().auth.getSession().then(({ data }) => { setSession(data.session); load(); });
+    sb().auth.getSession().then(({ data }) => { sess.current = data.session; setSession(data.session); load(); });
+    fetch('/api/captcha').then((r) => r.json()).then((j) => setSiteKey(j.siteKey || null)).catch(() => setSiteKey(null));
   }, [load]);
 
-  const authHeader = () => ({ Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' });
+  const authHeader = () => ({ Authorization: 'Bearer ' + sess.current.access_token, 'Content-Type': 'application/json' });
 
-  async function create(e) {
+  function start(e) {
     e.preventDefault();
-    setBusy(true); setMsg(''); setFresh(null); setCopied(false);
-    const r = await fetch('/api/keys', { method: 'POST', headers: authHeader(), body: JSON.stringify({ name }) });
+    setMsg(''); setFresh(null); setCopied(false);
+    if (!siteKey) { setMsg('Captcha is not configured on this server yet. The site owner must add the Cloudflare Turnstile keys.'); return; }
+    pending.current = name.trim();
+    setStep('captcha');
+  }
+
+  async function onToken(token) {
+    setStep('idle');
+    setBusy(true);
+    const r = await fetch('/api/keys', { method: 'POST', headers: authHeader(), body: JSON.stringify({ name: pending.current, captcha: token }) });
     const j = await r.json();
     if (!r.ok) setMsg(j.error || 'Failed');
     else { setFresh(j.key); setName(''); load(); }
@@ -101,11 +116,18 @@ export default function KeyManager() {
 
   return (
     <div>
-      <form className="card" onSubmit={create}>
+      <form className="card" onSubmit={start}>
         <b>Create a new AI Gateway API key</b>
         <p className="mute" style={{ margin: '4px 0' }}>Use the key only on your server. Never put it in frontend code.</p>
-        <input required maxLength={60} placeholder="Key name, e.g. my-app-ai" value={name} onChange={(e) => setName(e.target.value)} />
-        <button disabled={busy || !session}>Create key</button>
+        <input required maxLength={60} placeholder="Key name, e.g. my-app-ai" value={name} onChange={(e) => setName(e.target.value)} disabled={step === 'captcha'} />
+        {step === 'idle' && <button disabled={busy || !session}>{busy ? 'Creating…' : 'Create key'}</button>}
+        {step === 'captcha' && (
+          <div>
+            <b>Verify you are human to create this key</b>
+            <Turnstile siteKey={siteKey} onToken={onToken} onError={(m) => { setMsg(m); setStep('idle'); }} />
+            <button type="button" className="ghost small" onClick={() => setStep('idle')}>Cancel</button>
+          </div>
+        )}
         {msg && <p className="bad">{msg}</p>}
       </form>
 

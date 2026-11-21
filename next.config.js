@@ -15,7 +15,7 @@ const cors = [
 module.exports = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
-  experimental: { serverComponentsExternalPackages: ['mongodb'] },
+  experimental: { serverComponentsExternalPackages: ['mongodb', 'firebase-admin', '@google-cloud/firestore'] },
   async headers() {
     return [
       { source: '/:path*', headers: security },

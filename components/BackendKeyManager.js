@@ -1,10 +1,11 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { sb } from '@/lib/supabase-browser';
+import Turnstile from '@/components/Turnstile';
 
 const split = (s) => s.split(',').map((x) => x.trim()).filter(Boolean);
-const LABEL = { supabase: 'Supabase', mongodb: 'MongoDB' };
+const LABEL = { supabase: 'Supabase', mongodb: 'MongoDB', firebase: 'Firebase' };
 const selectStyle = { width: '100%', padding: '11px 13px', margin: '6px 0 14px', borderRadius: 11, border: '1px solid var(--line)', background: 'rgba(0,0,0,.35)', color: 'var(--text)', font: 'inherit' };
 const badge = { display: 'inline-block', padding: '2px 10px', borderRadius: 99, border: '1px solid rgba(124,92,255,.5)', background: 'rgba(124,92,255,.14)', color: '#c4b5fd', fontSize: 12, marginLeft: 8 };
 
@@ -49,16 +50,21 @@ function Row({ k, regen, del, save }) {
 }
 
 // Create, regenerate, restrict and delete backend (data storage) keys: bk-live-...
+// The Cloudflare captcha appears only after you press "Create backend key", once per new key.
 export default function BackendKeyManager() {
   const [session, setSession] = useState(null);
   const [keys, setKeys] = useState([]);
-  const [info, setInfo] = useState({ engines: { supabase: true, mongodb: false }, verified: true });
+  const [info, setInfo] = useState({ engines: { supabase: true, mongodb: false, firebase: false }, verified: true });
   const [name, setName] = useState('');
   const [engine, setEngine] = useState('supabase');
   const [fresh, setFresh] = useState(null);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [siteKey, setSiteKey] = useState(undefined);
+  const [step, setStep] = useState('idle');
+  const pending = useRef({ name: '', engine: 'supabase' });
+  const sess = useRef(null);
 
   const load = useCallback(async () => {
     const k = await sb().from('backend_keys').select('id,name,engine,key_prefix,request_count,last_used_at,rotated_at,allowed_ips,created_at').is('revoked_at', null).order('created_at', { ascending: false });
@@ -67,6 +73,7 @@ export default function BackendKeyManager() {
 
   useEffect(() => {
     sb().auth.getSession().then(async ({ data }) => {
+      sess.current = data.session;
       setSession(data.session);
       load();
       if (data.session) {
@@ -74,14 +81,23 @@ export default function BackendKeyManager() {
         if (r.ok) setInfo(await r.json());
       }
     });
+    fetch('/api/captcha').then((r) => r.json()).then((j) => setSiteKey(j.siteKey || null)).catch(() => setSiteKey(null));
   }, [load]);
 
-  const authHeader = () => ({ Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' });
+  const authHeader = () => ({ Authorization: 'Bearer ' + sess.current.access_token, 'Content-Type': 'application/json' });
 
-  async function create(e) {
+  function start(e) {
     e.preventDefault();
-    setBusy(true); setMsg(''); setFresh(null); setCopied(false);
-    const r = await fetch('/api/backend-keys', { method: 'POST', headers: authHeader(), body: JSON.stringify({ name, engine }) });
+    setMsg(''); setFresh(null); setCopied(false);
+    if (!siteKey) { setMsg('Captcha is not configured on this server yet. The site owner must add the Cloudflare Turnstile keys.'); return; }
+    pending.current = { name: name.trim(), engine };
+    setStep('captcha');
+  }
+
+  async function onToken(token) {
+    setStep('idle');
+    setBusy(true);
+    const r = await fetch('/api/backend-keys', { method: 'POST', headers: authHeader(), body: JSON.stringify({ ...pending.current, captcha: token }) });
     const j = await r.json();
     if (!r.ok) setMsg(j.error || 'Failed');
     else { setFresh(j.key); setName(''); load(); }
@@ -109,6 +125,8 @@ export default function BackendKeyManager() {
     return (await r.json()).error || 'Failed';
   }
 
+  const opt = { background: '#10121c' };
+
   return (
     <div>
       {!info.verified && (
@@ -117,17 +135,25 @@ export default function BackendKeyManager() {
         </div>
       )}
 
-      <form className="card" onSubmit={create}>
+      <form className="card" onSubmit={start}>
         <b>Create a new backend API key</b>
         <p className="mute" style={{ margin: '4px 0' }}>Each key is its own private data store for your website. Choose where the data lives.</p>
         <label>Key name</label>
-        <input required maxLength={60} placeholder="e.g. my-shop-backend" value={name} onChange={(e) => setName(e.target.value)} />
+        <input required maxLength={60} placeholder="e.g. my-shop-backend" value={name} onChange={(e) => setName(e.target.value)} disabled={step === 'captcha'} />
         <label>Storage engine</label>
-        <select style={selectStyle} value={engine} onChange={(e) => setEngine(e.target.value)}>
-          <option style={{ background: '#10121c' }} value="supabase">Supabase (Postgres)</option>
-          <option style={{ background: '#10121c' }} value="mongodb" disabled={!info.engines.mongodb}>MongoDB{info.engines.mongodb ? '' : ' (not connected yet)'}</option>
+        <select style={selectStyle} value={engine} onChange={(e) => setEngine(e.target.value)} disabled={step === 'captcha'}>
+          <option style={opt} value="supabase">Supabase (Postgres)</option>
+          <option style={opt} value="mongodb" disabled={!info.engines.mongodb}>MongoDB{info.engines.mongodb ? '' : ' (not connected yet)'}</option>
+          <option style={opt} value="firebase" disabled={!info.engines.firebase}>Firebase Firestore{info.engines.firebase ? '' : ' (not connected yet)'}</option>
         </select>
-        <button disabled={busy || !session}>Create backend key</button>
+        {step === 'idle' && <button disabled={busy || !session}>{busy ? 'Creating…' : 'Create backend key'}</button>}
+        {step === 'captcha' && (
+          <div>
+            <b>Verify you are human to create this key</b>
+            <Turnstile siteKey={siteKey} onToken={onToken} onError={(m) => { setMsg(m); setStep('idle'); }} />
+            <button type="button" className="ghost small" onClick={() => setStep('idle')}>Cancel</button>
+          </div>
+        )}
         {msg && <p className="bad">{msg}</p>}
       </form>
 

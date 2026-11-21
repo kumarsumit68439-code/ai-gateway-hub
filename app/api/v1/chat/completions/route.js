@@ -46,11 +46,21 @@ export async function POST(req) {
   const db = admin();
   const { data: key } = await db
     .from('api_keys')
-    .select('id,user_id')
+    .select('id,user_id,allowed_ips,allowed_origins')
     .eq('key_hash', hashKey(token))
     .is('revoked_at', null)
     .maybeSingle();
   if (!key) return err(401, 'Invalid or revoked API key.', 'authentication_error');
+
+  // Backend-only by default: a browser request carries an Origin header.
+  const origin = req.headers.get('origin');
+  if (origin && !(key.allowed_origins || []).includes(origin))
+    return err(403, 'This key is backend-only. Call the API from your server, or add this origin to the key in the dashboard.', 'permission_error');
+
+  // Optional IP allowlist for server-to-server use.
+  const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+  if ((key.allowed_ips || []).length && !key.allowed_ips.includes(ip))
+    return err(403, `IP ${ip || 'unknown'} is not allowed for this key.`, 'permission_error');
 
   const minAgo = new Date(Date.now() - 60 * 1000).toISOString();
   const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();

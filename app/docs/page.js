@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { Icon, NAMES } from '@/components/Icons';
+import { Icon } from '@/components/Icons';
+import { NAMES } from '@/lib/names';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'API Docs | AI Gateway' };

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-// Every page requires login except /login. Checked on the server, so page
-// content is never sent to visitors who are not logged in.
+// Every page requires login except /login and the OAuth callback.
+// Checked on the server, so page content is never sent to visitors who are not logged in.
 export async function middleware(req) {
   let res = NextResponse.next({ request: req });
 
@@ -24,6 +24,9 @@ export async function middleware(req) {
   const { data } = await supabase.auth.getUser();
   const user = data?.user;
   const path = req.nextUrl.pathname;
+
+  // Allow OAuth callback without a session yet
+  if (path.startsWith('/auth/')) return res;
 
   if (!user && path !== '/login') {
     const url = req.nextUrl.clone();

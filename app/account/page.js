@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { sb } from '@/lib/supabase-browser';
+import { Icon } from '@/components/Icons';
 
 const fmt = (d) => (d ? new Date(d).toLocaleString() : '-');
 const DBS = [
@@ -102,12 +103,13 @@ export default function Account() {
         {DBS.map(([id, label, desc]) => {
           const on = engines ? !!engines[id] : id === 'supabase';
           return (
-            <div className="check" key={id}>
-              <span className={'tick ' + (on ? 'ok' : 'warn')}>{on ? '✓' : '!'}</span>
-              <div>
-                <b>{label}</b> <span className={on ? 'ok' : 'mute'}>{on ? 'Connected' : 'Not connected yet'}</span>
+            <div className="check" key={id} style={{ alignItems: 'center' }}>
+              <Icon id={id} size={34} />
+              <div style={{ flex: 1 }}>
+                <b>{label}</b>
                 <div className="mute">{desc}</div>
               </div>
+              <span className={on ? 'ok' : 'mute'}>{on ? '✓ Connected' : 'Not connected yet'}</span>
             </div>
           );
         })}

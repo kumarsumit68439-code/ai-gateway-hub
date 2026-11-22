@@ -3,11 +3,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { sb } from '@/lib/supabase-browser';
 import Turnstile from '@/components/Turnstile';
+import { Icon, NAMES } from '@/components/Icons';
 
 const split = (s) => s.split(',').map((x) => x.trim()).filter(Boolean);
-const LABEL = { supabase: 'Supabase', mongodb: 'MongoDB', firebase: 'Firebase' };
-const selectStyle = { width: '100%', padding: '11px 13px', margin: '6px 0 14px', borderRadius: 11, border: '1px solid var(--line)', background: 'rgba(0,0,0,.35)', color: 'var(--text)', font: 'inherit' };
-const badge = { display: 'inline-block', padding: '2px 10px', borderRadius: 99, border: '1px solid rgba(124,92,255,.5)', background: 'rgba(124,92,255,.14)', color: '#c4b5fd', fontSize: 12, marginLeft: 8 };
+const ENGINES = [
+  ['supabase', 'Postgres'],
+  ['mongodb', 'Documents'],
+  ['firebase', 'Firestore'],
+];
+const badge = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 10px 2px 4px', borderRadius: 99, border: '1px solid rgba(124,92,255,.5)', background: 'rgba(124,92,255,.14)', color: '#c4b5fd', fontSize: 12, marginLeft: 8 };
+const tile = { display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: 12, borderRadius: 14, background: 'rgba(255,255,255,.05)', color: 'var(--text)', border: '1px solid var(--line)', boxShadow: 'none', fontWeight: 400, cursor: 'pointer' };
 
 function Row({ k, regen, del, save }) {
   const [open, setOpen] = useState(false);
@@ -23,7 +28,8 @@ function Row({ k, regen, del, save }) {
     <div style={{ borderTop: '1px solid var(--line)', padding: '14px 0' }}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <div>
-          <b>{k.name}</b><span style={badge}>{LABEL[k.engine]}</span> <code className="mute">{k.key_prefix}</code>
+          <Icon id={k.engine} size={26} /> <b style={{ verticalAlign: 'middle' }}>{k.name}</b>
+          <span style={badge}><Icon id={k.engine} size={16} />{NAMES[k.engine]}</span> <code className="mute">{k.key_prefix}</code>
           <div className="mute" style={{ fontSize: 13 }}>
             {k.request_count} requests · last used {k.last_used_at ? new Date(k.last_used_at).toLocaleString() : 'never'}
             {k.rotated_at ? ' · regenerated ' + new Date(k.rotated_at).toLocaleDateString() : ''}
@@ -125,8 +131,6 @@ export default function BackendKeyManager() {
     return (await r.json()).error || 'Failed';
   }
 
-  const opt = { background: '#10121c' };
-
   return (
     <div>
       {!info.verified && (
@@ -141,11 +145,22 @@ export default function BackendKeyManager() {
         <label>Key name</label>
         <input required maxLength={60} placeholder="e.g. my-shop-backend" value={name} onChange={(e) => setName(e.target.value)} disabled={step === 'captcha'} />
         <label>Storage engine</label>
-        <select style={selectStyle} value={engine} onChange={(e) => setEngine(e.target.value)} disabled={step === 'captcha'}>
-          <option style={opt} value="supabase">Supabase (Postgres)</option>
-          <option style={opt} value="mongodb" disabled={!info.engines.mongodb}>MongoDB{info.engines.mongodb ? '' : ' (not connected yet)'}</option>
-          <option style={opt} value="firebase" disabled={!info.engines.firebase}>Firebase Firestore{info.engines.firebase ? '' : ' (not connected yet)'}</option>
-        </select>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 10, margin: '6px 0 14px' }}>
+          {ENGINES.map(([id, sub]) => {
+            const on = !!info.engines[id];
+            const sel = engine === id;
+            return (
+              <button type="button" key={id} disabled={!on || step === 'captcha'} onClick={() => setEngine(id)}
+                style={{ ...tile, borderColor: sel ? 'var(--accent)' : 'var(--line)', boxShadow: sel ? '0 0 0 3px rgba(124,92,255,.25)' : 'none', opacity: on ? 1 : 0.5, cursor: on ? 'pointer' : 'not-allowed' }}>
+                <Icon id={id} size={36} />
+                <span>
+                  <b style={{ display: 'block' }}>{NAMES[id]}</b>
+                  <span className="mute" style={{ fontSize: 12 }}>{on ? sub : 'Not connected yet'}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
         {step === 'idle' && <button disabled={busy || !session}>{busy ? 'Creating…' : 'Create backend key'}</button>}
         {step === 'captcha' && (
           <div>

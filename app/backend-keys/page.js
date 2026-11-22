@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import BackendKeyManager from '@/components/BackendKeyManager';
+import { ProviderStrip } from '@/components/Icons';
 
 export const metadata = { title: 'Backend keys | AI Gateway' };
 
@@ -13,6 +14,7 @@ export default function BackendKeys() {
         A Cloudflare captcha is asked only when you create a key.
         Read the <Link href="/docs/backend">Backend docs</Link>. For AI model calls use <Link href="/gateway-keys">AI Gateway keys</Link>.
       </p>
+      <ProviderStrip ids={['supabase', 'mongodb', 'firebase']} />
       <BackendKeyManager />
     </div>
   );

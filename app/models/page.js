@@ -1,7 +1,8 @@
 import { getAllModels } from '@/lib/providers';
+import { Icon, ModelIcon } from '@/components/Icons';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Live models | AI Gateway Hub' };
+export const metadata = { title: 'Live models | AI Gateway' };
 
 export default async function Models() {
   const groups = await getAllModels();
@@ -14,7 +15,9 @@ export default async function Models() {
       {groups.map((g) => (
         <div className="card" key={g.provider}>
           <div className="row" style={{ justifyContent: 'space-between' }}>
-            <b>{g.label} <span className="mute">({g.models.length})</span></b>
+            <b style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 17 }}>
+              <Icon id={g.provider} size={32} />{g.label} <span className="mute">({g.models.length})</span>
+            </b>
             <span className="mute">{g.tier}</span>
           </div>
           {!g.configured && <p className="bad">Not configured on this server yet.</p>}
@@ -24,7 +27,14 @@ export default async function Models() {
               <thead><tr><th>Model id</th><th>Context</th></tr></thead>
               <tbody>
                 {g.models.map((m) => (
-                  <tr key={m.id}><td><code>{m.id}</code></td><td>{m.context ? m.context.toLocaleString() : '-'}</td></tr>
+                  <tr key={m.id}>
+                    <td>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                        <ModelIcon model={m.id} size={24} /><code>{m.id}</code>
+                      </span>
+                    </td>
+                    <td>{m.context ? m.context.toLocaleString() : '-'}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { sb } from '@/lib/supabase-browser';
+import { Icon } from '@/components/Icons';
 
 export default function Dashboard() {
   const [name, setName] = useState('');
@@ -41,8 +42,8 @@ export default function Dashboard() {
 
       <div className="card row" style={{ justifyContent: 'space-between' }}>
         <div>
-          <b>Backend API keys</b>
-          <div className="mute">Create, regenerate and lock your keys in Settings.</div>
+          <b>API keys</b>
+          <div className="mute">AI Gateway keys and Backend keys are managed in Settings.</div>
         </div>
         <Link className="btn" href="/settings#keys">Manage API keys</Link>
       </div>
@@ -56,7 +57,7 @@ export default function Dashboard() {
               {logs.map((l) => (
                 <tr key={l.id}>
                   <td>{new Date(l.created_at).toLocaleString()}</td>
-                  <td>{l.provider}</td>
+                  <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Icon id={l.provider} size={20} />{l.provider}</span></td>
                   <td>{l.model}</td>
                   <td className={l.status < 400 ? 'ok' : 'bad'}>{l.status}</td>
                   <td>{l.latency_ms}</td>

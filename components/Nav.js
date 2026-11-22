@@ -14,14 +14,16 @@ const explore = [
   ['/dashboard', 'Dashboard'],
   ['/docs', 'AI API Docs'],
   ['/docs/backend', 'Backend Docs'],
-  ['/models', 'Live Models'],
+  ['/models', 'Models'],
 ];
 const keysMenu = [
   ['/gateway-keys', 'AI Gateway keys'],
   ['/backend-keys', 'Backend keys'],
+  ['/playground/ai', 'AI Playground'],
+  ['/playground/backend', 'Backend Playground'],
 ];
 const accountMenu = [
-  ['/account', 'Account verification'],
+  ['/account', 'Verification'],
   ['/profile', 'Profile'],
   ['/settings', 'Settings'],
 ];
@@ -46,13 +48,13 @@ export default function Nav() {
         ))}
       </div>
       <div style={{ position: 'relative' }}>
-        <button className="ghost small menubtn" onClick={() => setOpen(!open)} aria-expanded={open}>Menu {open ? '▴' : '▾'}</button>
+        <button className="ghost small menubtn" onClick={() => setOpen(!open)} aria-expanded={open}>Menu {open ? '\u25b4' : '\u25be'}</button>
         {open && (
           <div className="panel">
             <small>Explore</small>
             {explore.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
             <hr />
-            <small>API keys</small>
+            <small>Keys and playground</small>
             {keysMenu.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
             <hr />
             <small>My account</small>

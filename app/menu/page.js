@@ -5,13 +5,14 @@ export const metadata = { title: 'Menu | AI Gateway' };
 const items = [
   ['/dashboard', 'D', 'Dashboard', 'Usage and requests'],
   ['/gateway-keys', 'G', 'AI Gateway keys', 'Call AI models'],
+  ['/playground/ai', 'P', 'AI Playground', 'Chat with real models'],
   ['/backend-keys', 'B', 'Backend keys', 'Store your app data'],
+  ['/playground/backend', 'X', 'Backend Playground', 'Browse and edit real data'],
   ['/docs', 'A', 'AI API Docs', 'Endpoints and examples'],
   ['/docs/backend', 'E', 'Backend Docs', 'Data endpoints and examples'],
   ['/models', 'M', 'Models', 'Browse all models'],
-  ['/floating', 'F', 'Floating Window', '3D floating preview with animations'],
   ['/account', 'C', 'Verification', 'Email and security'],
-  ['/profile', 'P', 'Profile', 'Your details'],
+  ['/profile', 'U', 'Profile', 'Your details'],
   ['/settings', 'S', 'Settings', 'Password and sessions'],
 ];
 

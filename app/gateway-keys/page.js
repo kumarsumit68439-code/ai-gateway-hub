@@ -9,7 +9,10 @@ export default function GatewayKeys() {
     <div className="wrap">
       <h1>AI Gateway keys</h1>
       <p className="mute">Call AI models from your server. <Link href="/docs">Docs</Link></p>
-      <ProviderStrip ids={['groq', 'openrouter', 'gemini', 'openai']} />
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <ProviderStrip ids={['groq', 'openrouter', 'gemini', 'openai']} />
+        <Link className="btn" href="/playground/ai">Open playground</Link>
+      </div>
       <KeyManager />
     </div>
   );

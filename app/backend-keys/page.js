@@ -9,7 +9,10 @@ export default function BackendKeys() {
     <div className="wrap">
       <h1>Backend keys</h1>
       <p className="mute">Store your app data privately. <Link href="/docs/backend">Docs</Link></p>
-      <ProviderStrip ids={['supabase', 'mongodb', 'firebase']} />
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <ProviderStrip ids={['supabase', 'mongodb', 'firebase']} />
+        <Link className="btn" href="/playground/backend">Open playground</Link>
+      </div>
       <BackendKeyManager />
     </div>
   );

@@ -5,21 +5,28 @@ import Link from 'next/link';
 
 export default function FloatingWindowPage() {
   const windowRef = useRef(null);
-  const [pos, setPos] = useState({ x: 40, y: 100 });
+  const [pos, setPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const [minimized, setMinimized] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [slide, setSlide] = useState(0);
 
+  // Auto-advance product demo slides
+  useEffect(() => {
+    const t = setInterval(() => setSlide((s) => (s + 1) % 4), 3200);
+    return () => clearInterval(t);
+  }, []);
+
+  // Center floating window
   useEffect(() => {
     const center = () => {
       if (!windowRef.current) return;
-      const w = windowRef.current.offsetWidth || 360;
-      const h = 420;
-      const leftPad = sidebarOpen && window.innerWidth > 700 ? 280 : 20;
+      const w = windowRef.current.offsetWidth;
+      const h = windowRef.current.offsetHeight;
       setPos({
-        x: Math.max(leftPad, (window.innerWidth - w) / 2),
-        y: Math.max(90, (window.innerHeight - h) / 2 - 20),
+        x: Math.max(16, (window.innerWidth - w) / 2 + (sidebarOpen ? 40 : 0)),
+        y: Math.max(70, (window.innerHeight - h) / 2 - 30),
       });
     };
     center();
@@ -27,6 +34,7 @@ export default function FloatingWindowPage() {
     return () => window.removeEventListener('resize', center);
   }, [sidebarOpen]);
 
+  // Drag
   useEffect(() => {
     const onMove = (e) => {
       if (!dragging) return;
@@ -59,8 +67,35 @@ export default function FloatingWindowPage() {
     setDragging(true);
   };
 
+  const slides = [
+    {
+      title: 'AI Gateway Hub',
+      sub: 'One API key for every AI model',
+      body: 'Groq · OpenRouter · Gemini · OpenAI',
+      tag: 'PRODUCT',
+    },
+    {
+      title: 'Gateway Keys',
+      sub: 'sk-gw-…',
+      body: 'Create your key once. Call any supported model through a single OpenAI-compatible endpoint.',
+      tag: 'KEYS',
+    },
+    {
+      title: 'Endpoints',
+      sub: 'OpenAI compatible',
+      body: 'POST /api/v1/chat/completions\nGET /api/v1/models\nGET /api/v1/providers',
+      tag: 'API',
+    },
+    {
+      title: 'Security & Limits',
+      sub: 'Built for production',
+      body: 'Supabase RLS · Hashed keys\n30 req/min · 1000/day\nStreaming supported',
+      tag: 'SECURE',
+    },
+  ];
+
   return (
-    <div className="float-page">
+    <div className={`float-page ${sidebarOpen ? 'sb-open' : 'sb-closed'}`}>
       {/* ===== SIDEBAR ===== */}
       <aside className={`float-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sb-head">
@@ -74,7 +109,7 @@ export default function FloatingWindowPage() {
           <Link href="/models">Live Models</Link>
           <Link href="/docs">API Docs</Link>
           <Link href="/docs/backend">Backend Docs</Link>
-          <Link href="/floating">Floating Window</Link>
+          <Link href="/floating" className="active-link">Floating Window</Link>
           <p className="sb-label">Keys</p>
           <Link href="/gateway-keys">AI Gateway keys</Link>
           <Link href="/backend-keys">Backend keys</Link>
@@ -88,28 +123,27 @@ export default function FloatingWindowPage() {
         <div className="sb-foot">
           <p>Provided by <span className="grad">Jilowa</span></p>
           <small>One key → every model</small>
-
-          {/* BIG CLEAR HIDE BUTTON */}
-          <button
-            type="button"
-            className="sb-hide-btn"
-            onClick={() => setSidebarOpen(false)}
-          >
-            ← Hide Sidebar
-          </button>
         </div>
-      </aside>
 
-      {/* ===== UNHIDE BUTTON (when sidebar is closed) ===== */}
-      {!sidebarOpen && (
+        {/* BIG clear HIDE button at bottom of sidebar */}
         <button
           type="button"
-          className="sb-unhide-btn"
-          onClick={() => setSidebarOpen(true)}
+          className="sb-hide-btn"
+          onClick={() => setSidebarOpen(false)}
         >
-          ☰ Show Sidebar
+          ← Hide sidebar
         </button>
-      )}
+      </aside>
+
+      {/* ===== UNHIDE BUTTON (visible only when sidebar is closed) ===== */}
+      <button
+        type="button"
+        className={`sb-unhide-btn ${sidebarOpen ? 'hidden' : ''}`}
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Show sidebar"
+      >
+        ☰ Show sidebar
+      </button>
 
       {/* ===== SCENE + FLOATING WINDOW ===== */}
       <div className="float-scene">
@@ -124,9 +158,8 @@ export default function FloatingWindowPage() {
           ref={windowRef}
           className={`float-window ${dragging ? 'dragging' : ''} ${minimized ? 'minimized' : ''}`}
           style={{
-            left: 0,
-            top: 0,
-            transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+            left: pos.x,
+            top: pos.y,
           }}
           onMouseDown={startDrag}
           onTouchStart={startDrag}
@@ -137,37 +170,62 @@ export default function FloatingWindowPage() {
               <button type="button" className="win-btn min" onClick={() => setMinimized(true)} title="Minimize" />
               <button type="button" className="win-btn max" onClick={() => setMinimized(false)} title="Restore" />
             </div>
-            <span className="win-title">AI Gateway Hub · Jilowa</span>
+            <span className="win-title">AI Gateway Hub · Product Demo</span>
             <div className="win-spacer" />
           </div>
 
           {!minimized && (
             <div className="win-content">
-              {/* ===== WEBSITE DETAILS "VIDEO" SHOWCASE (CSS animated, no external video) ===== */}
-              <div className="showcase-3d">
-                <div className="showcase-screen">
-                  <div className="showcase-scanline" />
-                  <div className="showcase-content">
-                    <div className="sc-logo">
-                      <span className="dot" />
-                      <strong>AI Gateway</strong>
-                    </div>
-                    <h3 className="sc-title">One API key for every AI model</h3>
-                    <div className="sc-chips">
-                      <span>Groq</span>
-                      <span>OpenRouter</span>
-                      <span>Gemini</span>
-                      <span>OpenAI</span>
-                    </div>
-                    <div className="sc-lines">
-                      <p><code>POST /api/v1/chat/completions</code></p>
-                      <p><code>GET  /api/v1/models</code></p>
-                      <p><code>sk-gw-…</code> keys · streaming · rate limits</p>
-                    </div>
-                    <p className="sc-brand">Provided by <span className="grad">Jilowa</span></p>
+              {/* ===== CUSTOM PRODUCT DEMO (no external cartoon video) ===== */}
+              <div className="demo-3d">
+                <div className="demo-screen">
+                  <div className="demo-topbar">
+                    <span className="demo-dot red" />
+                    <span className="demo-dot yellow" />
+                    <span className="demo-dot green" />
+                    <span className="demo-url">aigateway.jilowa · live</span>
                   </div>
-                  <div className="showcase-badge">▶ Website details</div>
+
+                  <div className="demo-body">
+                    {slides.map((s, i) => (
+                      <div
+                        key={i}
+                        className={`demo-slide ${slide === i ? 'active' : ''}`}
+                      >
+                        <span className="demo-tag">{s.tag}</span>
+                        <h2>{s.title}</h2>
+                        <p className="demo-sub">{s.sub}</p>
+                        <pre className="demo-body-text">{s.body}</pre>
+                      </div>
+                    ))}
+
+                    {/* Animated code / key visual */}
+                    <div className="demo-code">
+                      <code>
+                        <span className="c-key">Authorization</span>:
+                        <span className="c-val"> Bearer sk-gw-••••••••</span>
+                      </code>
+                      <code>
+                        <span className="c-key">POST</span>
+                        <span className="c-val"> /api/v1/chat/completions</span>
+                      </code>
+                    </div>
+                  </div>
+
+                  <div className="demo-progress">
+                    {slides.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`demo-dot-btn ${slide === i ? 'on' : ''}`}
+                        onClick={() => setSlide(i)}
+                        aria-label={`Slide ${i + 1}`}
+                      />
+                    ))}
+                  </div>
                 </div>
+
+                <div className="demo-glow" />
               </div>
 
               {/* Feature cards */}
@@ -175,31 +233,31 @@ export default function FloatingWindowPage() {
                 <div className="detail-card">
                   <span className="detail-icon">🔑</span>
                   <h3>Gateway Keys</h3>
-                  <p>Create <code>sk-gw-...</code> keys and call real models through one OpenAI-compatible endpoint.</p>
+                  <p>Create <code>sk-gw-...</code> keys and call real models through one endpoint.</p>
                 </div>
                 <div className="detail-card">
                   <span className="detail-icon">📡</span>
                   <h3>Endpoints</h3>
-                  <p><code>chat/completions</code> · <code>models</code> · <code>providers</code></p>
+                  <p><code>POST /api/v1/chat/completions</code><br /><code>GET /api/v1/models</code></p>
                 </div>
                 <div className="detail-card">
                   <span className="detail-icon">🛡️</span>
                   <h3>Security</h3>
-                  <p>Supabase RLS · hashed keys · 30 req/min · 1000/day</p>
+                  <p>RLS · hashed keys · 30/min · 1000/day · free models only.</p>
                 </div>
                 <div className="detail-card">
                   <span className="detail-icon">🚀</span>
                   <h3>Streaming</h3>
-                  <p>Full streaming support + live free model list</p>
+                  <p>Full streaming support. Live model list. Backend data keys.</p>
                 </div>
               </div>
 
               <div className="win-cta">
                 <Link href="/login" className="btn">Get started</Link>
-                <Link href="/docs" className="btn ghost">API Docs</Link>
+                <Link href="/docs" className="btn ghost">Read the docs</Link>
               </div>
 
-              <p className="win-footer">Provided by <span className="grad">Jilowa</span></p>
+              <p className="win-footer">Provided by <span className="grad">Jilowa</span> · AI Gateway Hub</p>
             </div>
           )}
         </div>
@@ -214,87 +272,84 @@ export default function FloatingWindowPage() {
       <style jsx global>{`
         .float-page {
           position: relative;
-          min-height: calc(100vh - 60px);
-          overflow: hidden;
+          min-height: calc(100vh - 58px);
           display: flex;
+          overflow: hidden;
         }
 
         /* ---------- SIDEBAR ---------- */
         .float-sidebar {
           position: relative;
-          width: 260px;
+          width: 250px;
           flex-shrink: 0;
-          background: rgba(10, 11, 20, 0.96);
+          background: rgba(8, 9, 18, 0.97);
           border-right: 1px solid var(--line);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
           display: flex;
           flex-direction: column;
           z-index: 30;
-          transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.35s, opacity 0.3s;
+          transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), margin 0.32s;
+          height: calc(100vh - 58px);
         }
         .float-sidebar.closed {
-          transform: translateX(-105%);
-          width: 0;
-          opacity: 0;
+          transform: translateX(-100%);
+          margin-right: -250px;
           pointer-events: none;
-          border: none;
         }
+
         .sb-head {
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 18px 16px;
-          border-bottom: 1px solid var(--line);
+          padding: 16px 16px 12px;
           font-family: var(--f-head), sans-serif;
           font-weight: 700;
-          font-size: 16px;
+          font-size: 15px;
         }
+
         .sb-nav {
           flex: 1;
-          padding: 12px 10px;
+          padding: 4px 10px 12px;
           overflow-y: auto;
         }
         .sb-nav a {
           display: block;
-          padding: 10px 12px;
-          border-radius: 10px;
+          padding: 9px 12px;
+          border-radius: 9px;
           color: var(--text);
           font-size: 14px;
-          transition: 0.2s;
+          transition: 0.15s;
         }
-        .sb-nav a:hover {
-          background: rgba(255, 255, 255, 0.08);
-          text-decoration: none;
+        .sb-nav a:hover,
+        .sb-nav a.active-link {
+          background: rgba(124, 92, 255, 0.18);
           color: #fff;
+          text-decoration: none;
         }
         .sb-label {
-          margin: 14px 12px 6px;
-          font-size: 11px;
-          letter-spacing: 0.08em;
+          margin: 12px 12px 4px;
+          font-size: 10px;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
           color: var(--mute);
         }
         .sb-foot {
-          padding: 14px 14px 18px;
+          padding: 12px 16px;
           border-top: 1px solid var(--line);
-          font-size: 13px;
+          font-size: 12px;
           color: var(--mute);
         }
-        .sb-foot p { margin: 0 0 2px; }
-        .sb-foot small { display: block; margin-bottom: 14px; }
 
-        /* BIG HIDE BUTTON */
+        /* CLEAR HIDE BUTTON */
         .sb-hide-btn {
-          display: block;
-          width: 100%;
+          margin: 0 12px 14px;
+          width: calc(100% - 24px);
           padding: 12px 14px;
           border-radius: 11px;
           border: 1px solid rgba(251, 113, 133, 0.45);
           background: rgba(251, 113, 133, 0.12);
           color: #fb7185;
           font-size: 14px;
-          font-weight: 700;
+          font-weight: 600;
           cursor: pointer;
           transition: 0.2s;
           text-align: center;
@@ -305,32 +360,36 @@ export default function FloatingWindowPage() {
           transform: translateY(-1px);
         }
         .sb-hide-btn:active {
-          transform: none;
+          transform: scale(0.98);
         }
 
-        /* UNHIDE BUTTON */
+        /* CLEAR UNHIDE BUTTON */
         .sb-unhide-btn {
           position: fixed;
-          top: 70px;
+          top: 68px;
           left: 12px;
           z-index: 40;
-          padding: 12px 18px;
+          padding: 11px 16px;
           border-radius: 12px;
           border: 1px solid rgba(124, 92, 255, 0.5);
           background: rgba(14, 15, 26, 0.95);
-          color: #fff;
+          color: #c4b5fd;
           font-size: 14px;
-          font-weight: 700;
+          font-weight: 600;
           cursor: pointer;
-          backdrop-filter: blur(14px);
-          -webkit-backdrop-filter: blur(14px);
-          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(124, 92, 255, 0.2);
-          transition: 0.25s;
-          animation: fadeUp 0.35s both;
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(12px);
+          transition: 0.25s, opacity 0.2s, visibility 0.2s;
+        }
+        .sb-unhide-btn.hidden {
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
         }
         .sb-unhide-btn:hover {
+          background: rgba(124, 92, 255, 0.25);
           border-color: var(--accent);
-          box-shadow: 0 10px 36px rgba(124, 92, 255, 0.4);
+          color: #fff;
           transform: translateY(-2px);
         }
 
@@ -338,87 +397,80 @@ export default function FloatingWindowPage() {
         .float-scene {
           flex: 1;
           position: relative;
-          perspective: 1400px;
+          min-height: calc(100vh - 58px);
           overflow: hidden;
-          min-height: calc(100vh - 60px);
+          perspective: 1200px;
         }
         .scene-floor {
           position: absolute;
-          inset: 45% -20% -30%;
-          background: radial-gradient(ellipse at center, rgba(124, 92, 255, 0.14) 0%, transparent 70%);
-          transform: rotateX(70deg);
+          inset: 45% -30% -20%;
+          background: radial-gradient(ellipse at center, rgba(124, 92, 255, 0.1) 0%, transparent 65%);
+          transform: rotateX(65deg);
           pointer-events: none;
-        }
-        .scene-particles {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          overflow: hidden;
         }
         .particle {
           position: absolute;
-          width: 4px;
-          height: 4px;
+          width: 3px;
+          height: 3px;
           border-radius: 50%;
           background: var(--accent2);
-          opacity: 0.35;
-          left: calc(10% + (var(--i) * 8%));
-          top: calc(18% + (var(--i) * 6%));
-          animation: particleFloat 8s ease-in-out infinite;
-          animation-delay: calc(var(--i) * -0.55s);
-          box-shadow: 0 0 10px var(--accent2);
+          opacity: 0.3;
+          left: calc(10% + var(--i) * 8%);
+          top: calc(20% + var(--i) * 6%);
+          animation: particleFloat 7s ease-in-out infinite;
+          animation-delay: calc(var(--i) * -0.5s);
+          box-shadow: 0 0 8px var(--accent2);
         }
         @keyframes particleFloat {
-          0%, 100% { transform: translateY(0) scale(1); opacity: 0.25; }
-          50% { transform: translateY(-36px) scale(1.35); opacity: 0.55; }
+          0%, 100% { transform: translateY(0); opacity: 0.2; }
+          50% { transform: translateY(-30px); opacity: 0.5; }
         }
 
         /* ---------- FLOATING WINDOW ---------- */
         .float-window {
           position: absolute;
-          width: min(480px, 92vw);
+          width: min(500px, 92vw);
           transform-style: preserve-3d;
-          animation: windowFloat 6s ease-in-out infinite;
+          animation: windowFloat 5.5s ease-in-out infinite;
           cursor: grab;
           z-index: 10;
-          border-radius: 18px;
-          background: rgba(16, 18, 32, 0.9);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 16px;
+          background: rgba(14, 16, 28, 0.92);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           box-shadow:
-            0 25px 80px rgba(0, 0, 0, 0.55),
-            0 0 0 1px rgba(124, 92, 255, 0.18),
-            inset 0 1px 0 rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(24px) saturate(1.3);
-          -webkit-backdrop-filter: blur(24px) saturate(1.3);
+            0 24px 70px rgba(0, 0, 0, 0.55),
+            0 0 0 1px rgba(124, 92, 255, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+          backdrop-filter: blur(20px);
           overflow: hidden;
         }
         .float-window.dragging {
           cursor: grabbing;
           animation: none;
-          box-shadow: 0 40px 120px rgba(0, 0, 0, 0.65), 0 0 40px rgba(124, 92, 255, 0.3);
+          box-shadow: 0 36px 100px rgba(0, 0, 0, 0.65), 0 0 40px rgba(124, 92, 255, 0.3);
         }
         .float-window.minimized {
           width: 260px;
           animation: none;
         }
         @keyframes windowFloat {
-          0%, 100% { transform: translate3d(var(--x, 0), var(--y, 0), 0) translateY(0); }
-          50% { transform: translate3d(var(--x, 0), var(--y, 0), 0) translateY(-12px); }
+          0%, 100% { transform: translateY(0) rotateX(1.5deg) rotateY(-2deg); }
+          50% { transform: translateY(-12px) rotateX(-1deg) rotateY(1.5deg); }
         }
 
         .win-titlebar {
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 11px 14px;
+          padding: 10px 12px;
           background: rgba(0, 0, 0, 0.4);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
           user-select: none;
         }
-        .win-dots { display: flex; gap: 7px; }
+        .win-dots { display: flex; gap: 6px; }
         .win-btn {
-          width: 12px;
-          height: 12px;
+          width: 11px;
+          height: 11px;
           border-radius: 50%;
           border: none;
           cursor: pointer;
@@ -430,224 +482,275 @@ export default function FloatingWindowPage() {
         .win-title {
           flex: 1;
           text-align: center;
-          font-size: 13px;
+          font-size: 12px;
           color: var(--mute);
-          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .win-spacer { width: 40px; }
 
         .win-content {
-          padding: 16px;
-          max-height: min(70vh, 640px);
+          padding: 14px;
+          max-height: min(68vh, 620px);
           overflow-y: auto;
           cursor: default;
         }
 
-        /* ---------- WEBSITE DETAILS SHOWCASE (3D animated panel) ---------- */
-        .showcase-3d {
-          perspective: 900px;
+        /* ---------- PRODUCT DEMO (custom, no external video) ---------- */
+        .demo-3d {
+          position: relative;
           margin-bottom: 16px;
+          perspective: 900px;
         }
-        .showcase-screen {
+        .demo-screen {
           position: relative;
           border-radius: 14px;
           overflow: hidden;
-          border: 1px solid rgba(124, 92, 255, 0.45);
-          background: linear-gradient(160deg, #0d0f1c 0%, #12152a 50%, #0a0c18 100%);
-          min-height: 200px;
+          border: 1px solid rgba(124, 92, 255, 0.4);
+          background: linear-gradient(160deg, #0c0e1a 0%, #12152a 100%);
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+          transform: rotateX(4deg) rotateY(-3deg);
+          animation: demoTilt 7s ease-in-out infinite;
           transform-style: preserve-3d;
-          animation: screenTilt 7s ease-in-out infinite;
-          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 30px rgba(124, 92, 255, 0.15);
         }
-        @keyframes screenTilt {
-          0%, 100% { transform: rotateY(-5deg) rotateX(3deg); }
-          50% { transform: rotateY(5deg) rotateX(-2deg); }
+        @keyframes demoTilt {
+          0%, 100% { transform: rotateX(4deg) rotateY(-4deg); }
+          50% { transform: rotateX(-2deg) rotateY(3deg); }
         }
-        .showcase-scanline {
+        .demo-glow {
           position: absolute;
-          inset: 0;
-          background: repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 2px,
-            rgba(0, 0, 0, 0.12) 2px,
-            rgba(0, 0, 0, 0.12) 4px
-          );
+          inset: -20%;
+          background: radial-gradient(circle at 50% 40%, rgba(124, 92, 255, 0.25), transparent 60%);
           pointer-events: none;
-          z-index: 2;
-          opacity: 0.4;
+          z-index: -1;
+          animation: glowPulse 4s ease-in-out infinite;
         }
-        .showcase-content {
-          position: relative;
-          z-index: 1;
-          padding: 22px 18px 28px;
-          text-align: center;
+        @keyframes glowPulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
         }
-        .sc-logo {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 12px;
-          font-family: var(--f-head), sans-serif;
-          font-size: 15px;
-        }
-        .sc-title {
-          margin: 0 0 12px;
-          font-size: 18px;
-          line-height: 1.3;
-          background: linear-gradient(90deg, #c4b5fd, #22d3ee);
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-        }
-        .sc-chips {
+
+        .demo-topbar {
           display: flex;
-          flex-wrap: wrap;
+          align-items: center;
           gap: 6px;
-          justify-content: center;
-          margin-bottom: 14px;
+          padding: 8px 12px;
+          background: rgba(0, 0, 0, 0.45);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
-        .sc-chips span {
-          padding: 4px 10px;
-          border-radius: 99px;
+        .demo-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+        .demo-dot.red { background: #ff5f57; }
+        .demo-dot.yellow { background: #febc2e; }
+        .demo-dot.green { background: #28c840; }
+        .demo-url {
+          margin-left: 8px;
           font-size: 11px;
-          background: rgba(124, 92, 255, 0.18);
-          border: 1px solid rgba(124, 92, 255, 0.35);
-          color: #c4b5fd;
-        }
-        .sc-lines {
-          margin: 0 0 12px;
-          font-size: 12px;
           color: var(--mute);
-          line-height: 1.6;
+          font-family: ui-monospace, monospace;
         }
-        .sc-lines code {
-          font-size: 11px;
-          background: rgba(0, 0, 0, 0.4);
-          padding: 2px 6px;
-          border-radius: 4px;
-          color: #a5f3fc;
+
+        .demo-body {
+          position: relative;
+          height: 168px;
+          padding: 16px 18px 8px;
+          overflow: hidden;
         }
-        .sc-brand {
+        .demo-slide {
+          position: absolute;
+          inset: 16px 18px 40px;
+          opacity: 0;
+          transform: translateY(12px) scale(0.97);
+          transition: opacity 0.45s, transform 0.45s;
+          pointer-events: none;
+        }
+        .demo-slide.active {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          pointer-events: auto;
+        }
+        .demo-tag {
+          display: inline-block;
+          font-size: 10px;
+          letter-spacing: 0.08em;
+          padding: 3px 8px;
+          border-radius: 99px;
+          background: rgba(124, 92, 255, 0.25);
+          color: #c4b5fd;
+          margin-bottom: 8px;
+        }
+        .demo-slide h2 {
+          margin: 0 0 4px;
+          font-size: 20px;
+          line-height: 1.2;
+        }
+        .demo-sub {
+          margin: 0 0 8px;
+          font-size: 13px;
+          color: var(--accent2);
+          font-weight: 500;
+        }
+        .demo-body-text {
           margin: 0;
           font-size: 12px;
           color: var(--mute);
-        }
-        .showcase-badge {
-          position: absolute;
-          bottom: 10px;
-          left: 10px;
-          z-index: 3;
-          font-size: 11px;
-          font-weight: 600;
-          padding: 4px 10px;
-          border-radius: 99px;
-          background: rgba(124, 92, 255, 0.8);
-          color: #fff;
+          white-space: pre-line;
+          font-family: ui-monospace, Menlo, monospace;
+          line-height: 1.45;
+          background: none;
+          border: none;
+          padding: 0;
         }
 
-        /* Details grid */
+        .demo-code {
+          position: absolute;
+          bottom: 36px;
+          left: 18px;
+          right: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .demo-code code {
+          font-size: 11px;
+          padding: 5px 8px;
+          border-radius: 6px;
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          font-family: ui-monospace, monospace;
+        }
+        .c-key { color: #a78bfa; }
+        .c-val { color: #67e8f9; }
+
+        .demo-progress {
+          display: flex;
+          justify-content: center;
+          gap: 6px;
+          padding: 0 0 12px;
+        }
+        .demo-dot-btn {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          border: none;
+          background: rgba(255, 255, 255, 0.2);
+          cursor: pointer;
+          padding: 0;
+          transition: 0.2s;
+        }
+        .demo-dot-btn.on {
+          background: var(--accent);
+          box-shadow: 0 0 8px var(--accent);
+          width: 18px;
+          border-radius: 99px;
+        }
+
+        /* Details */
         .details-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 10px;
-          margin-bottom: 16px;
+          gap: 9px;
+          margin-bottom: 14px;
         }
         @media (max-width: 420px) {
           .details-grid { grid-template-columns: 1fr; }
         }
         .detail-card {
-          padding: 12px;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.04);
+          padding: 11px;
+          border-radius: 11px;
+          background: rgba(255, 255, 255, 0.035);
           border: 1px solid var(--line);
-          transition: 0.25s;
+          transition: 0.2s;
         }
         .detail-card:hover {
-          border-color: rgba(124, 92, 255, 0.45);
+          border-color: rgba(124, 92, 255, 0.4);
           transform: translateY(-2px);
         }
-        .detail-icon { font-size: 18px; display: block; margin-bottom: 4px; }
-        .detail-card h3 { margin: 0 0 4px; font-size: 13px; }
+        .detail-icon { font-size: 18px; display: block; margin-bottom: 3px; }
+        .detail-card h3 { margin: 0 0 3px; font-size: 13px; }
         .detail-card p {
           margin: 0;
           font-size: 11px;
           color: var(--mute);
-          line-height: 1.45;
+          line-height: 1.4;
         }
         .detail-card code {
           font-size: 10px;
-          background: rgba(0, 0, 0, 0.35);
+          background: rgba(0, 0, 0, 0.3);
           padding: 1px 4px;
           border-radius: 3px;
         }
 
         .win-cta {
           display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
+          gap: 8px;
           margin-bottom: 12px;
         }
         .win-cta .btn {
           flex: 1;
           text-align: center;
-          min-width: 110px;
+          font-size: 13px;
+          padding: 9px 12px;
         }
         .win-footer {
           text-align: center;
-          font-size: 12px;
+          font-size: 11px;
           color: var(--mute);
           margin: 0;
         }
 
         .float-dock {
           position: absolute;
-          bottom: 28px;
+          bottom: 24px;
           left: 50%;
           transform: translateX(-50%);
           display: flex;
           align-items: center;
-          gap: 10px;
-          padding: 12px 22px;
+          gap: 8px;
+          padding: 11px 20px;
           border-radius: 99px;
           border: 1px solid var(--line);
           background: rgba(14, 15, 26, 0.92);
           color: var(--text);
           font-weight: 600;
+          font-size: 13px;
           cursor: pointer;
-          backdrop-filter: blur(16px);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
           z-index: 12;
+          box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
         }
         .float-dock:hover {
           border-color: var(--accent);
           transform: translateX(-50%) translateY(-2px);
         }
 
-        /* Mobile: sidebar becomes full overlay */
+        /* Mobile */
         @media (max-width: 700px) {
           .float-sidebar {
             position: fixed;
-            top: 0;
+            top: 58px;
             left: 0;
             bottom: 0;
-            height: 100%;
-            width: min(280px, 85vw);
-            box-shadow: 20px 0 60px rgba(0, 0, 0, 0.5);
+            height: auto;
+            z-index: 50;
+            box-shadow: 8px 0 40px rgba(0, 0, 0, 0.5);
           }
           .float-sidebar.closed {
-            transform: translateX(-110%);
-            width: min(280px, 85vw);
+            margin-right: 0;
           }
           .float-window {
-            width: min(94vw, 400px);
+            width: min(94vw, 420px);
           }
         }
 
         @media (prefers-reduced-motion: reduce) {
           .float-window,
-          .showcase-screen,
-          .particle {
+          .demo-screen,
+          .particle,
+          .demo-glow {
             animation: none !important;
           }
         }

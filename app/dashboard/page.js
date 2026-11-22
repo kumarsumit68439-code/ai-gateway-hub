@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { sb } from '@/lib/supabase-browser';
 import { Icon } from '@/components/Icons';
+import CountUp from '@/components/CountUp';
 
 export default function Dashboard() {
   const [name, setName] = useState('');
@@ -28,7 +29,7 @@ export default function Dashboard() {
   }, []);
 
   const total = keys.reduce((s, k) => s + Number(k.request_count || 0), 0);
-  const num = (v) => (ready ? v : <span className="skel" style={{ display: 'inline-block', width: 50, height: 28 }} />);
+  const num = (v) => (ready ? <CountUp value={v} /> : <span className="skel" style={{ display: 'inline-block', width: 50, height: 28 }} />);
 
   return (
     <div className="wrap">

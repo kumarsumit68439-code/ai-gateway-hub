@@ -4,6 +4,8 @@ import './premium.css';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import Nav from '@/components/Nav';
 import FX from '@/components/FX';
+import Particles from '@/components/Particles';
+import './luxe.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--f-body', display: 'swap' });
 const grotesk = Space_Grotesk({ subsets: ['latin'], variable: '--f-head', display: 'swap' });
@@ -20,6 +22,7 @@ export default function RootLayout({ children }) {
       <body>
         <div className="aurora" aria-hidden="true"><i /><i /><i /></div>
         <div className="gridbg" aria-hidden="true" />
+        <Particles />
         <Nav />
         <FX />
         <main>{children}</main>

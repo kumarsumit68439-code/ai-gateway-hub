@@ -53,7 +53,7 @@ export default function FloatingWindowPage() {
   }, [dragging]);
 
   const startDrag = (e) => {
-    if (e.target.closest('.win-btn') || e.target.closest('.win-content')) return;
+    if (e.target.closest('.win-btn') || e.target.closest('.win-content') || e.target.closest('video') || e.target.closest('img')) return;
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     const rect = windowRef.current.getBoundingClientRect();
@@ -68,8 +68,13 @@ export default function FloatingWindowPage() {
         <div className="sb-head">
           <span className="dot" />
           <b>AI Gateway</b>
-          <button className="sb-toggle" onClick={() => setSidebarOpen(false)} aria-label="Close sidebar">
-            ×
+          <button
+            className="sb-hide-btn"
+            onClick={() => setSidebarOpen(false)}
+            title="Hide sidebar"
+            aria-label="Hide sidebar"
+          >
+            ← Hide
           </button>
         </div>
         <nav className="sb-nav">
@@ -78,6 +83,7 @@ export default function FloatingWindowPage() {
           <Link href="/models">Live Models</Link>
           <Link href="/docs">API Docs</Link>
           <Link href="/docs/backend">Backend Docs</Link>
+          <Link href="/floating">Floating Window</Link>
           <p className="sb-label">Keys</p>
           <Link href="/gateway-keys">AI Gateway keys</Link>
           <Link href="/backend-keys">Backend keys</Link>
@@ -93,9 +99,16 @@ export default function FloatingWindowPage() {
         </div>
       </aside>
 
+      {/* Unhide button — always visible when sidebar is hidden */}
       {!sidebarOpen && (
-        <button className="sb-open-btn" onClick={() => setSidebarOpen(true)} aria-label="Open sidebar">
-          ☰
+        <button
+          className="sb-unhide-btn"
+          onClick={() => setSidebarOpen(true)}
+          title="Show sidebar"
+          aria-label="Show sidebar"
+        >
+          <span>☰</span>
+          <span className="unhide-label">Show sidebar</span>
         </button>
       )}
 
@@ -132,7 +145,51 @@ export default function FloatingWindowPage() {
           {/* Window content */}
           {!minimized && (
             <div className="win-content">
-              {/* Hero image / video area with 3D card */}
+              {/* 3D Video + Image section */}
+              <div className="media-3d">
+                {/* Video card with 3D tilt */}
+                <div className="media-card video-card">
+                  <div className="media-frame">
+                    <video
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      poster="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=640&q=80"
+                    >
+                      <source
+                        src="https://cdn.coverr.co/videos/coverr-artificial-intelligence-network-6550/1080p.mp4"
+                        type="video/mp4"
+                      />
+                      <source
+                        src="https://www.w3schools.com/html/mov_bbb.mp4"
+                        type="video/mp4"
+                      />
+                    </video>
+                    <div className="media-overlay">
+                      <span className="media-badge">▶ Live 3D Video</span>
+                    </div>
+                  </div>
+                  <p className="media-caption">AI neural network animation</p>
+                </div>
+
+                {/* Image card with 3D tilt */}
+                <div className="media-card image-card">
+                  <div className="media-frame">
+                    <img
+                      src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=640&q=80"
+                      alt="AI technology abstract"
+                      loading="lazy"
+                    />
+                    <div className="media-overlay">
+                      <span className="media-badge">🖼 3D Image</span>
+                    </div>
+                  </div>
+                  <p className="media-caption">AI Gateway · Powered by Jilowa</p>
+                </div>
+              </div>
+
+              {/* Hero text */}
               <div className="hero-3d">
                 <div className="hero-card">
                   <div className="hero-glow" />
@@ -217,27 +274,35 @@ export default function FloatingWindowPage() {
           width: 0;
           border: none;
           overflow: hidden;
+          pointer-events: none;
         }
         .sb-head {
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 18px 16px;
+          padding: 16px 14px;
           border-bottom: 1px solid var(--line);
           font-family: var(--f-head), sans-serif;
           font-weight: 700;
         }
-        .sb-toggle {
+        .sb-hide-btn {
           margin-left: auto;
-          background: none;
-          border: none;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid var(--line);
           color: var(--mute);
-          font-size: 22px;
+          font-size: 12px;
+          font-weight: 600;
           cursor: pointer;
-          line-height: 1;
-          padding: 0 4px;
+          padding: 6px 12px;
+          border-radius: 8px;
+          transition: 0.2s;
+          white-space: nowrap;
         }
-        .sb-toggle:hover { color: var(--text); }
+        .sb-hide-btn:hover {
+          background: rgba(251, 113, 133, 0.15);
+          border-color: rgba(251, 113, 133, 0.5);
+          color: #fb7185;
+        }
         .sb-nav {
           flex: 1;
           padding: 12px 10px;
@@ -269,25 +334,40 @@ export default function FloatingWindowPage() {
           font-size: 13px;
           color: var(--mute);
         }
-        .sb-open-btn {
+
+        /* Unhide button */
+        .sb-unhide-btn {
           position: fixed;
-          top: 70px;
+          top: 72px;
           left: 14px;
-          z-index: 16;
-          width: 42px;
-          height: 42px;
+          z-index: 20;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
           border-radius: 12px;
           border: 1px solid var(--line);
-          background: rgba(14, 15, 26, 0.9);
+          background: rgba(14, 15, 26, 0.95);
           color: var(--text);
-          font-size: 18px;
+          font-size: 14px;
+          font-weight: 600;
           cursor: pointer;
-          backdrop-filter: blur(12px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+          transition: 0.25s;
+          animation: fadeUp 0.35s both;
         }
-        .sb-open-btn:hover {
+        .sb-unhide-btn:hover {
           border-color: var(--accent);
-          transform: scale(1.05);
+          box-shadow: 0 10px 32px rgba(124, 92, 255, 0.35);
+          transform: translateY(-2px);
+        }
+        .sb-unhide-btn span:first-child {
+          font-size: 16px;
+        }
+        .unhide-label {
+          white-space: nowrap;
         }
 
         /* 3D scene */
@@ -332,7 +412,7 @@ export default function FloatingWindowPage() {
         /* Floating window */
         .float-window {
           position: absolute;
-          width: min(520px, 92vw);
+          width: min(560px, 94vw);
           --rx: 2deg;
           --ry: -3deg;
           transform-style: preserve-3d;
@@ -340,7 +420,7 @@ export default function FloatingWindowPage() {
           cursor: grab;
           z-index: 10;
           border-radius: 18px;
-          background: rgba(16, 18, 32, 0.82);
+          background: rgba(16, 18, 32, 0.85);
           border: 1px solid rgba(255, 255, 255, 0.12);
           box-shadow:
             0 25px 80px rgba(0, 0, 0, 0.55),
@@ -424,21 +504,94 @@ export default function FloatingWindowPage() {
 
         /* Content */
         .win-content {
-          padding: 20px;
-          max-height: min(70vh, 620px);
+          padding: 18px;
+          max-height: min(72vh, 680px);
           overflow-y: auto;
           cursor: default;
         }
 
-        /* 3D hero */
+        /* Media 3D (video + image) */
+        .media-3d {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 18px;
+          perspective: 900px;
+        }
+        @media (max-width: 480px) {
+          .media-3d { grid-template-columns: 1fr; }
+        }
+        .media-card {
+          transform-style: preserve-3d;
+          transition: transform 0.4s ease;
+        }
+        .media-card:hover {
+          transform: rotateY(8deg) rotateX(-4deg) scale(1.03);
+        }
+        .video-card {
+          animation: mediaTiltLeft 8s ease-in-out infinite;
+        }
+        .image-card {
+          animation: mediaTiltRight 8s ease-in-out infinite;
+        }
+        @keyframes mediaTiltLeft {
+          0%, 100% { transform: rotateY(-5deg) rotateX(3deg); }
+          50% { transform: rotateY(4deg) rotateX(-2deg); }
+        }
+        @keyframes mediaTiltRight {
+          0%, 100% { transform: rotateY(5deg) rotateX(-3deg); }
+          50% { transform: rotateY(-4deg) rotateX(2deg); }
+        }
+        .media-frame {
+          position: relative;
+          border-radius: 12px;
+          overflow: hidden;
+          border: 1px solid rgba(124, 92, 255, 0.35);
+          background: #0a0b12;
+          aspect-ratio: 16 / 10;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+        .media-frame video,
+        .media-frame img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        .media-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 50%);
+          display: flex;
+          align-items: flex-end;
+          padding: 10px;
+          pointer-events: none;
+        }
+        .media-badge {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 4px 10px;
+          border-radius: 99px;
+          background: rgba(124, 92, 255, 0.75);
+          color: #fff;
+          backdrop-filter: blur(6px);
+        }
+        .media-caption {
+          margin: 8px 0 0;
+          font-size: 12px;
+          color: var(--mute);
+          text-align: center;
+        }
+
+        /* Hero 3D */
         .hero-3d {
           perspective: 800px;
-          margin-bottom: 20px;
+          margin-bottom: 18px;
         }
         .hero-card {
           position: relative;
           border-radius: 16px;
-          padding: 28px 20px;
+          padding: 24px 18px;
           background: linear-gradient(145deg, rgba(124, 92, 255, 0.18), rgba(34, 211, 238, 0.1));
           border: 1px solid rgba(124, 92, 255, 0.35);
           transform-style: preserve-3d;
@@ -462,14 +615,14 @@ export default function FloatingWindowPage() {
         }
         .hero-visual {
           position: relative;
-          width: 80px;
-          height: 80px;
-          margin: 0 auto 16px;
+          width: 72px;
+          height: 72px;
+          margin: 0 auto 12px;
           display: grid;
           place-items: center;
         }
         .hero-icon {
-          font-size: 36px;
+          font-size: 32px;
           z-index: 2;
           filter: drop-shadow(0 0 12px rgba(124, 92, 255, 0.8));
           animation: iconSpin 10s linear infinite;
@@ -498,7 +651,7 @@ export default function FloatingWindowPage() {
         }
         .hero-text h2 {
           margin: 0 0 6px;
-          font-size: 20px;
+          font-size: 18px;
           line-height: 1.25;
         }
         .hero-text p {
@@ -511,14 +664,14 @@ export default function FloatingWindowPage() {
         .details-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 12px;
-          margin-bottom: 20px;
+          gap: 10px;
+          margin-bottom: 18px;
         }
         @media (max-width: 480px) {
           .details-grid { grid-template-columns: 1fr; }
         }
         .detail-card {
-          padding: 14px;
+          padding: 12px;
           border-radius: 12px;
           background: rgba(255, 255, 255, 0.04);
           border: 1px solid var(--line);
@@ -530,24 +683,24 @@ export default function FloatingWindowPage() {
           box-shadow: 0 10px 28px rgba(124, 92, 255, 0.15);
         }
         .detail-icon {
-          font-size: 22px;
+          font-size: 20px;
           display: block;
-          margin-bottom: 6px;
+          margin-bottom: 4px;
         }
         .detail-card h3 {
           margin: 0 0 4px;
-          font-size: 14px;
+          font-size: 13px;
         }
         .detail-card p {
           margin: 0;
-          font-size: 12px;
+          font-size: 11px;
           color: var(--mute);
           line-height: 1.45;
         }
         .detail-card code {
-          font-size: 11px;
+          font-size: 10px;
           background: rgba(0, 0, 0, 0.35);
-          padding: 1px 5px;
+          padding: 1px 4px;
           border-radius: 4px;
         }
 
@@ -555,12 +708,12 @@ export default function FloatingWindowPage() {
           display: flex;
           gap: 10px;
           flex-wrap: wrap;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
         }
         .win-cta .btn {
           flex: 1;
           text-align: center;
-          min-width: 120px;
+          min-width: 110px;
         }
         .win-footer {
           text-align: center;
@@ -598,7 +751,8 @@ export default function FloatingWindowPage() {
 
         @media (max-width: 700px) {
           .float-sidebar { position: fixed; height: 100%; top: 0; left: 0; }
-          .float-window { width: min(94vw, 420px); }
+          .float-window { width: min(96vw, 440px); }
+          .unhide-label { display: none; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -607,7 +761,9 @@ export default function FloatingWindowPage() {
           .hero-icon,
           .hero-rings i,
           .particle,
-          .hero-glow {
+          .hero-glow,
+          .video-card,
+          .image-card {
             animation: none !important;
           }
         }

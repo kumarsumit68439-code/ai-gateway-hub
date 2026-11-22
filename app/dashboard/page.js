@@ -28,29 +28,26 @@ export default function Dashboard() {
   }, []);
 
   const total = keys.reduce((s, k) => s + Number(k.request_count || 0), 0);
+  const num = (v) => (ready ? v : <span className="skel" style={{ display: 'inline-block', width: 50, height: 28 }} />);
 
   return (
     <div className="wrap">
       <h1>Welcome{name ? ', ' + name : ''}</h1>
-      <p className="mute">Here is what is happening with your gateway.</p>
 
       <div className="stats">
-        <div className="stat"><small>Active API keys</small><strong>{ready ? keys.length : '…'}</strong></div>
-        <div className="stat"><small>Requests (24 hours)</small><strong>{ready ? day : '…'}</strong></div>
-        <div className="stat"><small>Requests (all time)</small><strong>{ready ? total : '…'}</strong></div>
+        <div className="stat"><small>API keys</small><strong>{num(keys.length)}</strong></div>
+        <div className="stat"><small>Requests, 24h</small><strong>{num(day)}</strong></div>
+        <div className="stat"><small>Total requests</small><strong>{num(total)}</strong></div>
       </div>
 
       <div className="card row" style={{ justifyContent: 'space-between' }}>
-        <div>
-          <b>API keys</b>
-          <div className="mute">AI Gateway keys and Backend keys are managed in Settings.</div>
-        </div>
-        <Link className="btn" href="/settings#keys">Manage API keys</Link>
+        <b>API keys</b>
+        <Link className="btn" href="/settings#keys">Manage</Link>
       </div>
 
       <h2>Recent requests</h2>
       <div className="card">
-        {logs.length === 0 ? <span className="mute">No requests yet. See the <Link href="/docs">API Docs</Link> to make your first call.</span> : (
+        {logs.length === 0 ? <span className="mute">No requests yet.</span> : (
           <table>
             <thead><tr><th>Time</th><th>Provider</th><th>Model</th><th>Status</th><th>ms</th></tr></thead>
             <tbody>

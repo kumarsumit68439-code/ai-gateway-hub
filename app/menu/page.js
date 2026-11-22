@@ -9,6 +9,7 @@ const items = [
   ['/docs', 'A', 'AI API Docs', 'Endpoints and examples'],
   ['/docs/backend', 'E', 'Backend Docs', 'Data endpoints and examples'],
   ['/models', 'M', 'Models', 'Browse all models'],
+  ['/floating', 'F', 'Floating Window', '3D floating preview with animations'],
   ['/account', 'C', 'Verification', 'Email and security'],
   ['/profile', 'P', 'Profile', 'Your details'],
   ['/settings', 'S', 'Settings', 'Password and sessions'],

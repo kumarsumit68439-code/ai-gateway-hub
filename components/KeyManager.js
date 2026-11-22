@@ -22,8 +22,7 @@ function KeyRow({ k, regen, revoke, save }) {
         <div>
           <b>{k.name}</b> <code className="mute">{k.key_prefix}</code>
           <div className="mute" style={{ fontSize: 13 }}>
-            {k.request_count} requests · last used {k.last_used_at ? new Date(k.last_used_at).toLocaleString() : 'never'}
-            {k.rotated_at ? ' · regenerated ' + new Date(k.rotated_at).toLocaleDateString() : ''}
+            {k.request_count} requests · {k.last_used_at ? 'used ' + new Date(k.last_used_at).toLocaleDateString() : 'never used'}
           </div>
         </div>
         <div className="row">
@@ -34,9 +33,9 @@ function KeyRow({ k, regen, revoke, save }) {
       </div>
       {open && (
         <div style={{ marginTop: 12 }}>
-          <label>Allowed server IPs (optional, comma separated). Empty = any IP.</label>
+          <label>Allowed IPs (optional)</label>
           <input value={ips} onChange={(e) => setIps(e.target.value)} placeholder="203.0.113.10, 203.0.113.11" />
-          <label>Allowed browser origins (optional). Empty = backend-only, browser requests are blocked.</label>
+          <label>Allowed origins (optional)</label>
           <input value={origins} onChange={(e) => setOrigins(e.target.value)} placeholder="https://mysite.com" />
           <div className="row">
             <button className="small" onClick={submit}>Save</button>
@@ -48,8 +47,7 @@ function KeyRow({ k, regen, revoke, save }) {
   );
 }
 
-// Create, regenerate, restrict and revoke AI gateway API keys (sk-gw-...).
-// The Cloudflare captcha appears only after you press "Create key", once per new key.
+// AI gateway keys (sk-gw-...). The captcha appears only after pressing "Create key".
 export default function KeyManager() {
   const [session, setSession] = useState(null);
   const [keys, setKeys] = useState([]);
@@ -78,7 +76,7 @@ export default function KeyManager() {
   function start(e) {
     e.preventDefault();
     setMsg(''); setFresh(null); setCopied(false);
-    if (!siteKey) { setMsg('Captcha is not configured on this server yet. The site owner must add the Cloudflare Turnstile keys.'); return; }
+    if (!siteKey) { setMsg('Verification is unavailable right now. Please try again later.'); return; }
     pending.current = name.trim();
     setStep('captcha');
   }
@@ -88,17 +86,17 @@ export default function KeyManager() {
     setBusy(true);
     const r = await fetch('/api/keys', { method: 'POST', headers: authHeader(), body: JSON.stringify({ name: pending.current, captcha: token }) });
     const j = await r.json();
-    if (!r.ok) setMsg(j.error || 'Failed');
+    if (!r.ok) setMsg(j.error || 'Something went wrong.');
     else { setFresh(j.key); setName(''); load(); }
     setBusy(false);
   }
 
   async function regen(id) {
-    if (!confirm('Regenerate this key? The old key stops working immediately, so update your server with the new one.')) return;
+    if (!confirm('Regenerate this key? The old key stops working immediately.')) return;
     setMsg(''); setCopied(false);
     const r = await fetch('/api/keys/' + id + '/regenerate', { method: 'POST', headers: authHeader() });
     const j = await r.json();
-    if (!r.ok) setMsg(j.error || 'Failed');
+    if (!r.ok) setMsg(j.error || 'Something went wrong.');
     else { setFresh(j.key); load(); }
   }
 
@@ -111,19 +109,17 @@ export default function KeyManager() {
   async function save(id, body) {
     const r = await fetch('/api/keys/' + id, { method: 'PATCH', headers: authHeader(), body: JSON.stringify(body) });
     if (r.ok) { load(); return ''; }
-    return (await r.json()).error || 'Failed';
+    return (await r.json()).error || 'Something went wrong.';
   }
 
   return (
     <div>
       <form className="card" onSubmit={start}>
-        <b>Create a new AI Gateway API key</b>
-        <p className="mute" style={{ margin: '4px 0' }}>Use the key only on your server. Never put it in frontend code.</p>
-        <input required maxLength={60} placeholder="Key name, e.g. my-app-ai" value={name} onChange={(e) => setName(e.target.value)} disabled={step === 'captcha'} />
+        <b>New key</b>
+        <input required maxLength={60} placeholder="Key name" value={name} onChange={(e) => setName(e.target.value)} disabled={step === 'captcha'} style={{ marginTop: 10 }} />
         {step === 'idle' && <button disabled={busy || !session}>{busy ? 'Creating…' : 'Create key'}</button>}
         {step === 'captcha' && (
           <div>
-            <b>Verify you are human to create this key</b>
             <Turnstile siteKey={siteKey} onToken={onToken} onError={(m) => { setMsg(m); setStep('idle'); }} />
             <button type="button" className="ghost small" onClick={() => setStep('idle')}>Cancel</button>
           </div>
@@ -140,7 +136,7 @@ export default function KeyManager() {
       )}
 
       <div className="card" style={{ paddingTop: 6 }}>
-        {keys.length === 0 ? <p className="mute">No active keys yet.</p> : keys.map((k) => (
+        {keys.length === 0 ? <p className="mute">No keys yet.</p> : keys.map((k) => (
           <KeyRow key={k.id + (k.rotated_at || '')} k={k} regen={regen} revoke={revoke} save={save} />
         ))}
       </div>

@@ -6,13 +6,9 @@ import Turnstile from '@/components/Turnstile';
 import { Icon, NAMES } from '@/components/Icons';
 
 const split = (s) => s.split(',').map((x) => x.trim()).filter(Boolean);
-const ENGINES = [
-  ['supabase', 'Postgres'],
-  ['mongodb', 'Documents'],
-  ['firebase', 'Firestore'],
-];
+const ENGINES = ['supabase', 'mongodb', 'firebase'];
 const badge = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 10px 2px 4px', borderRadius: 99, border: '1px solid rgba(124,92,255,.5)', background: 'rgba(124,92,255,.14)', color: '#c4b5fd', fontSize: 12, marginLeft: 8 };
-const tile = { display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: 12, borderRadius: 14, background: 'rgba(255,255,255,.05)', color: 'var(--text)', border: '1px solid var(--line)', boxShadow: 'none', fontWeight: 400, cursor: 'pointer' };
+const tile = { display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: 12, borderRadius: 14, background: 'rgba(255,255,255,.05)', color: 'var(--text)', border: '1px solid var(--line)', boxShadow: 'none', fontWeight: 600, cursor: 'pointer' };
 
 function Row({ k, regen, del, save }) {
   const [open, setOpen] = useState(false);
@@ -31,8 +27,7 @@ function Row({ k, regen, del, save }) {
           <Icon id={k.engine} size={26} /> <b style={{ verticalAlign: 'middle' }}>{k.name}</b>
           <span style={badge}><Icon id={k.engine} size={16} />{NAMES[k.engine]}</span> <code className="mute">{k.key_prefix}</code>
           <div className="mute" style={{ fontSize: 13 }}>
-            {k.request_count} requests · last used {k.last_used_at ? new Date(k.last_used_at).toLocaleString() : 'never'}
-            {k.rotated_at ? ' · regenerated ' + new Date(k.rotated_at).toLocaleDateString() : ''}
+            {k.request_count} requests · {k.last_used_at ? 'used ' + new Date(k.last_used_at).toLocaleDateString() : 'never used'}
           </div>
         </div>
         <div className="row">
@@ -43,7 +38,7 @@ function Row({ k, regen, del, save }) {
       </div>
       {open && (
         <div style={{ marginTop: 12 }}>
-          <label>Allowed server IPs (optional, comma separated). Empty = any IP. Browser requests are always blocked.</label>
+          <label>Allowed IPs (optional)</label>
           <input value={ips} onChange={(e) => setIps(e.target.value)} placeholder="203.0.113.10" />
           <div className="row">
             <button className="small" onClick={submit}>Save</button>
@@ -55,12 +50,11 @@ function Row({ k, regen, del, save }) {
   );
 }
 
-// Create, regenerate, restrict and delete backend (data storage) keys: bk-live-...
-// The Cloudflare captcha appears only after you press "Create backend key", once per new key.
+// Backend keys (bk-live-...). The captcha appears only after pressing "Create key".
 export default function BackendKeyManager() {
   const [session, setSession] = useState(null);
   const [keys, setKeys] = useState([]);
-  const [info, setInfo] = useState({ engines: { supabase: true, mongodb: false, firebase: false }, verified: true });
+  const [info, setInfo] = useState({ engines: { supabase: true }, verified: true });
   const [name, setName] = useState('');
   const [engine, setEngine] = useState('supabase');
   const [fresh, setFresh] = useState(null);
@@ -91,11 +85,12 @@ export default function BackendKeyManager() {
   }, [load]);
 
   const authHeader = () => ({ Authorization: 'Bearer ' + sess.current.access_token, 'Content-Type': 'application/json' });
+  const available = ENGINES.filter((id) => info.engines[id]);
 
   function start(e) {
     e.preventDefault();
     setMsg(''); setFresh(null); setCopied(false);
-    if (!siteKey) { setMsg('Captcha is not configured on this server yet. The site owner must add the Cloudflare Turnstile keys.'); return; }
+    if (!siteKey) { setMsg('Verification is unavailable right now. Please try again later.'); return; }
     pending.current = { name: name.trim(), engine };
     setStep('captcha');
   }
@@ -105,22 +100,22 @@ export default function BackendKeyManager() {
     setBusy(true);
     const r = await fetch('/api/backend-keys', { method: 'POST', headers: authHeader(), body: JSON.stringify({ ...pending.current, captcha: token }) });
     const j = await r.json();
-    if (!r.ok) setMsg(j.error || 'Failed');
+    if (!r.ok) setMsg(j.error || 'Something went wrong.');
     else { setFresh(j.key); setName(''); load(); }
     setBusy(false);
   }
 
   async function regen(id) {
-    if (!confirm('Regenerate this key? The old key stops working immediately. Your stored data is kept.')) return;
+    if (!confirm('Regenerate this key? The old key stops working immediately. Your data is kept.')) return;
     setMsg(''); setCopied(false);
     const r = await fetch('/api/backend-keys/' + id + '/regenerate', { method: 'POST', headers: authHeader() });
     const j = await r.json();
-    if (!r.ok) setMsg(j.error || 'Failed');
+    if (!r.ok) setMsg(j.error || 'Something went wrong.');
     else { setFresh(j.key); load(); }
   }
 
   async function del(id) {
-    if (!confirm('Delete this backend project? The key stops working and ALL data stored under it is permanently deleted.')) return;
+    if (!confirm('Delete this key and all data stored under it? This cannot be undone.')) return;
     await fetch('/api/backend-keys/' + id, { method: 'DELETE', headers: authHeader() });
     load();
   }
@@ -128,43 +123,36 @@ export default function BackendKeyManager() {
   async function save(id, body) {
     const r = await fetch('/api/backend-keys/' + id, { method: 'PATCH', headers: authHeader(), body: JSON.stringify(body) });
     if (r.ok) { load(); return ''; }
-    return (await r.json()).error || 'Failed';
+    return (await r.json()).error || 'Something went wrong.';
   }
 
   return (
     <div>
       {!info.verified && (
         <div className="card" style={{ borderColor: '#fbbf24' }}>
-          <b>Verify your email to create keys.</b> <Link href="/account">Open Account verification</Link>
+          <b>Verify your email to create keys.</b> <Link href="/account">Verify now</Link>
         </div>
       )}
 
       <form className="card" onSubmit={start}>
-        <b>Create a new backend API key</b>
-        <p className="mute" style={{ margin: '4px 0' }}>Each key is its own private data store for your website. Choose where the data lives.</p>
-        <label>Key name</label>
-        <input required maxLength={60} placeholder="e.g. my-shop-backend" value={name} onChange={(e) => setName(e.target.value)} disabled={step === 'captcha'} />
-        <label>Storage engine</label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 10, margin: '6px 0 14px' }}>
-          {ENGINES.map(([id, sub]) => {
-            const on = !!info.engines[id];
-            const sel = engine === id;
-            return (
-              <button type="button" key={id} disabled={!on || step === 'captcha'} onClick={() => setEngine(id)}
-                style={{ ...tile, borderColor: sel ? 'var(--accent)' : 'var(--line)', boxShadow: sel ? '0 0 0 3px rgba(124,92,255,.25)' : 'none', opacity: on ? 1 : 0.5, cursor: on ? 'pointer' : 'not-allowed' }}>
-                <Icon id={id} size={36} />
-                <span>
-                  <b style={{ display: 'block' }}>{NAMES[id]}</b>
-                  <span className="mute" style={{ fontSize: 12 }}>{on ? sub : 'Not connected yet'}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        {step === 'idle' && <button disabled={busy || !session}>{busy ? 'Creating…' : 'Create backend key'}</button>}
+        <b>New key</b>
+        <input required maxLength={60} placeholder="Key name" value={name} onChange={(e) => setName(e.target.value)} disabled={step === 'captcha'} style={{ marginTop: 10 }} />
+        {available.length > 1 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10, margin: '0 0 14px' }}>
+            {available.map((id) => {
+              const sel = engine === id;
+              return (
+                <button type="button" key={id} disabled={step === 'captcha'} onClick={() => setEngine(id)}
+                  style={{ ...tile, borderColor: sel ? 'var(--accent)' : 'var(--line)', boxShadow: sel ? '0 0 0 3px rgba(124,92,255,.25)' : 'none' }}>
+                  <Icon id={id} size={34} />{NAMES[id]}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {step === 'idle' && <button disabled={busy || !session}>{busy ? 'Creating…' : 'Create key'}</button>}
         {step === 'captcha' && (
           <div>
-            <b>Verify you are human to create this key</b>
             <Turnstile siteKey={siteKey} onToken={onToken} onError={(m) => { setMsg(m); setStep('idle'); }} />
             <button type="button" className="ghost small" onClick={() => setStep('idle')}>Cancel</button>
           </div>
@@ -174,15 +162,14 @@ export default function BackendKeyManager() {
 
       {fresh && (
         <div className="card" style={{ borderColor: 'var(--ok)' }}>
-          <b className="ok">Copy your backend key now. It will not be shown again.</b>
+          <b className="ok">Copy your key now. It will not be shown again.</b>
           <pre><code>{fresh}</code></pre>
           <button onClick={() => { navigator.clipboard.writeText(fresh); setCopied(true); }}>{copied ? 'Copied' : 'Copy key'}</button>
-          <p className="mute" style={{ marginBottom: 0 }}>Save it in your server's environment variables (for example <code>BACKEND_API_KEY</code>). See the <Link href="/docs/backend">Backend docs</Link>.</p>
         </div>
       )}
 
       <div className="card" style={{ paddingTop: 6 }}>
-        {keys.length === 0 ? <p className="mute">No backend keys yet.</p> : keys.map((k) => (
+        {keys.length === 0 ? <p className="mute">No keys yet.</p> : keys.map((k) => (
           <Row key={k.id + (k.rotated_at || '')} k={k} regen={regen} del={del} save={save} />
         ))}
       </div>

@@ -11,34 +11,33 @@ const MAX_KEYS = 10;
 const ENGINES = ['supabase', 'mongodb', 'firebase'];
 const available = () => ({ supabase: true, mongodb: mongoConfigured(), firebase: firebaseConfigured() });
 
-// Which storage engines are connected + whether the account is verified.
+// Storage engines the user can pick + whether the account is verified.
 export async function GET(req) {
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: 'Not logged in.' }, { status: 401 });
   return NextResponse.json({ engines: available(), verified: !!user.email_confirmed_at });
 }
 
-// Create a backend key (bk-live-...). Needs a verified email and a fresh Turnstile captcha.
+// Create a backend key (bk-live-...). Needs a verified email and a fresh captcha.
 // The full key is returned ONCE.
 export async function POST(req) {
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: 'Not logged in.' }, { status: 401 });
   if (!user.email_confirmed_at)
-    return NextResponse.json({ error: 'Verify your email first (Account page), then create keys.' }, { status: 403 });
+    return NextResponse.json({ error: 'Verify your email first.' }, { status: 403 });
 
   let name = '', engine = '', captcha = '';
   try { const b = await req.json(); name = String(b.name || '').trim(); engine = String(b.engine || ''); captcha = b.captcha; } catch {}
-  if (name.length < 1 || name.length > 60) return NextResponse.json({ error: 'Key name must be 1-60 characters.' }, { status: 400 });
-  if (!ENGINES.includes(engine)) return NextResponse.json({ error: 'Engine must be "supabase", "mongodb" or "firebase".' }, { status: 400 });
-  if (!available()[engine])
-    return NextResponse.json({ error: `${engine === 'mongodb' ? 'MongoDB' : 'Firebase'} is not connected on this server yet. Use another engine for now.` }, { status: 503 });
+  if (name.length < 1 || name.length > 60) return NextResponse.json({ error: 'Enter a key name (up to 60 characters).' }, { status: 400 });
+  if (!ENGINES.includes(engine) || !available()[engine])
+    return NextResponse.json({ error: 'This storage option is unavailable.' }, { status: 400 });
 
   const c = await verifyCaptcha(captcha, req);
   if (!c.ok) return NextResponse.json({ error: c.error }, { status: c.status });
 
   const db = admin();
   const { count } = await db.from('backend_keys').select('id', { count: 'exact', head: true }).eq('user_id', user.id).is('revoked_at', null);
-  if ((count || 0) >= MAX_KEYS) return NextResponse.json({ error: `Maximum ${MAX_KEYS} active backend keys.` }, { status: 400 });
+  if ((count || 0) >= MAX_KEYS) return NextResponse.json({ error: `You can have up to ${MAX_KEYS} keys.` }, { status: 400 });
 
   const { key, prefix } = newBackendKey();
   const { data, error } = await db

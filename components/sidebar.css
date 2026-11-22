@@ -1,0 +1,41 @@
+:root{--navh:58px;--sbw:292px}
+.nav{height:var(--navh);padding-top:0;padding-bottom:0}
+.nav .menubtn{margin-right:2px}
+
+/* sidebar drawer */
+.sidebar{position:fixed;top:var(--navh);left:0;bottom:0;width:var(--sbw);z-index:30;display:flex;flex-direction:column;background:rgba(10,11,20,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--line);box-shadow:24px 0 60px rgba(0,0,0,.45);transform:translateX(-104%);visibility:hidden;transition:transform .32s cubic-bezier(.2,.7,.2,1),visibility 0s .32s}
+.sidebar.open{transform:none;visibility:visible;transition:transform .32s cubic-bezier(.2,.7,.2,1),visibility 0s}
+.sb-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px}
+.sb-head b{font-family:var(--f-head),sans-serif;font-size:17px}
+button.sb-hide{width:34px;height:34px;padding:0;border-radius:50%;display:grid;place-items:center;font-size:20px;line-height:1}
+
+/* only the sidebar scrolls */
+.sb-scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:4px 10px 18px;scrollbar-width:thin}
+.sb-group{margin-top:14px}
+.sb-group small{display:block;padding:0 12px 6px;color:var(--mute);letter-spacing:.08em;text-transform:uppercase;font-size:11px}
+.sb-link{display:flex;align-items:center;gap:12px;padding:10px 12px;margin:2px 0;border-radius:12px;color:var(--text);transition:background .2s,transform .2s}
+.sb-link:hover{background:rgba(255,255,255,.07);text-decoration:none;transform:translateX(3px)}
+.sb-link svg{flex:none;color:var(--mute);transition:color .2s}
+.sb-link:hover svg{color:var(--accent2)}
+.sb-link.active{background:linear-gradient(135deg,rgba(124,92,255,.3),rgba(34,211,238,.14));box-shadow:inset 0 0 0 1px rgba(124,92,255,.55)}
+.sb-link.active svg{color:var(--accent2)}
+.sb-foot{padding:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.sb-foot .who{color:var(--mute);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
+
+/* unhide handle */
+button.sb-handle{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:29;width:26px;height:68px;padding:0;border-radius:0 16px 16px 0;font-size:20px;line-height:1;display:grid;place-items:center;box-shadow:6px 0 24px rgba(124,92,255,.45)}
+button.sb-handle:hover{transform:translateY(-50%) translateX(3px)}
+
+.sb-backdrop{position:fixed;left:0;right:0;bottom:0;top:var(--navh);background:rgba(0,0,0,.55);backdrop-filter:blur(2px);z-index:25;opacity:0;pointer-events:none;transition:opacity .3s}
+.sb-backdrop.show{opacity:1;pointer-events:auto}
+
+@media (min-width:961px){
+  .sb-backdrop{display:none}
+  main,.foot{transition:margin-left .32s cubic-bezier(.2,.7,.2,1)}
+  body.sb-open main,body.sb-open .foot{margin-left:var(--sbw)}
+}
+@media (max-width:960px){
+  .sidebar{width:min(86vw,330px)}
+  body.sb-open{overflow:hidden}
+  .nav .links{display:none}
+}

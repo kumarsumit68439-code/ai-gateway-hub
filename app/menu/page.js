@@ -4,6 +4,9 @@ export const metadata = { title: 'Menu | AI Gateway' };
 
 const items = [
   ['/dashboard', 'D', 'Dashboard', 'Usage and requests'],
+  ['/servers', 'V', 'Servers', 'Chat and voice like Discord'],
+  ['/bots', 'T', 'Bots', 'Create, host and invite bots'],
+  ['/docs/bots', 'H', 'Bot Hosting Guide', 'VPS, Docker, Node.js, Python'],
   ['/gateway-keys', 'G', 'AI Gateway keys', 'Call AI models'],
   ['/playground/ai', 'P', 'AI Playground', 'Chat with real models'],
   ['/backend-keys', 'B', 'Backend keys', 'Store your app data'],

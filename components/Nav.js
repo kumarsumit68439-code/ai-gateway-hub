@@ -18,15 +18,18 @@ const P = {
   user: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" /></>,
   gear: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1" /></>,
   grid: <path d="M4 6h16M4 12h16M4 18h16" />,
+  bot: <><rect x="5" y="8" width="14" height="11" rx="3" /><path d="M12 8V4M9 13h.01M15 13h.01M9 17h6" /></>,
+  server: <><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /><path d="M7 7.5h.01M7 16.5h.01" /></>,
 };
 
 const GROUPS = [
   { title: 'Explore', items: [['/dashboard', 'Dashboard', 'dash'], ['/docs', 'AI API Docs', 'book'], ['/docs/backend', 'Backend Docs', 'db'], ['/models', 'Models', 'cube']] },
+  { title: 'Community', items: [['/servers', 'Servers', 'server'], ['/bots', 'Bots', 'bot'], ['/docs/bots', 'Bot Hosting Guide', 'book']] },
   { title: 'Keys and playground', items: [['/gateway-keys', 'AI Gateway keys', 'key'], ['/backend-keys', 'Backend keys', 'lock'], ['/playground/ai', 'AI Playground', 'play'], ['/playground/backend', 'Backend Playground', 'term']] },
   { title: 'My account', items: [['/account', 'Verification', 'shield'], ['/profile', 'Profile', 'user'], ['/settings', 'Settings', 'gear']] },
 ];
 
-const top = [['/dashboard', 'Dashboard'], ['/models', 'Models'], ['/docs', 'API Docs']];
+const top = [['/dashboard', 'Dashboard'], ['/servers', 'Servers'], ['/bots', 'Bots'], ['/docs', 'API Docs']];
 
 function Ico({ name }) {
   return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{P[name]}</svg>;
@@ -79,7 +82,7 @@ export default function Nav() {
         <Link href="/dashboard" className="brand"><span className="dot" />AI Gateway</Link>
         <div className="links">
           {top.map(([href, label]) => (
-            <Link key={href} href={href} className={path === href ? 'active' : ''}>{label}</Link>
+            <Link key={href} href={href} className={path === href || (href !== '/dashboard' && path.startsWith(href + '/')) ? 'active' : ''}>{label}</Link>
           ))}
         </div>
       </nav>

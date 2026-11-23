@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { admin } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
-import { displayName, fail, isMember, isUuid, postMessage } from '@/lib/discord';
+import { fail, isMember, isUuid, postMessage, userCard } from '@/lib/discord';
 import { runHostedBots } from '@/lib/runtime';
 
 export const runtime = 'nodejs';
@@ -28,8 +28,11 @@ export async function POST(req, { params }) {
   const { count } = await db.from('messages').select('id', { count: 'exact', head: true }).eq('author_id', user.id).gte('created_at', since);
   if ((count || 0) >= 10) return fail(429, 'You are sending messages too fast.');
 
-  const userName = await displayName(db, user);
-  await postMessage(db, channel.id, { type: 'user', id: user.id, name: userName }, content);
+  // Use the member's per-server nickname when they set one.
+  const { data: mem } = await db.from('server_members').select('user_name,user_avatar').eq('server_id', channel.server_id).eq('user_id', user.id).maybeSingle();
+  const card = await userCard(db, user);
+  const userName = mem?.user_name || card.name;
+  await postMessage(db, channel.id, { type: 'user', id: user.id, name: userName, avatar: mem?.user_avatar || card.avatar }, content);
 
   const { data: server } = await db.from('servers').select('id,name').eq('id', channel.server_id).maybeSingle();
   try {

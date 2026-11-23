@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { admin } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
-import { displayName, fail } from '@/lib/discord';
+import { fail, userCard } from '@/lib/discord';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +22,8 @@ export async function POST(req) {
   const { data: already } = await db.from('server_members').select('user_id').eq('server_id', server.id).eq('user_id', user.id).maybeSingle();
   if (!already) {
     if ((count || 0) >= 200) return fail(403, 'This server is full.');
-    await db.from('server_members').insert({ server_id: server.id, user_id: user.id, user_name: await displayName(db, user), role: 'member' });
+    const me = await userCard(db, user);
+    await db.from('server_members').insert({ server_id: server.id, user_id: user.id, user_name: me.name, user_avatar: me.avatar, role: 'member' });
   }
   return NextResponse.json({ id: server.id });
 }

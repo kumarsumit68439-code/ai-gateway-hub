@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { admin } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
-import { displayName, fail } from '@/lib/discord';
+import { fail, seedRoles, userCard } from '@/lib/discord';
 
 export const dynamic = 'force-dynamic';
 const MAX_SERVERS = 10;
 
-// Create a server with a default text and voice channel.
+// Create a server with default roles, a text channel and a voice channel.
 export async function POST(req) {
   const user = await getUser(req);
   if (!user) return fail(401, 'Not logged in.');
@@ -24,8 +24,9 @@ export async function POST(req) {
   const { data: server, error } = await db.from('servers').insert({ owner_id: user.id, name }).select('id').single();
   if (error) return fail(500, 'Could not create server.');
 
-  const uname = await displayName(db, user);
-  await db.from('server_members').insert({ server_id: server.id, user_id: user.id, user_name: uname, role: 'owner' });
+  const me = await userCard(db, user);
+  await db.from('server_members').insert({ server_id: server.id, user_id: user.id, user_name: me.name, user_avatar: me.avatar, role: 'owner' });
+  await seedRoles(db, server.id);
   await db.from('channels').insert([
     { server_id: server.id, name: 'general', type: 'text', position: 0 },
     { server_id: server.id, name: 'lounge', type: 'voice', position: 1 },

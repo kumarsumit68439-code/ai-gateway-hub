@@ -36,8 +36,8 @@ export function InviteSheet({ server, onClose }) {
   );
 }
 
-// Server menu: quick actions, create channel or category, per-server profile, privacy.
-export default function ServerMenu({ server, me, myMember, isManager, isOwner, channels, cats, onClose, onInvite, reload, go }) {
+// Server menu: quick actions, setup progress, create channel or category, per-server profile, privacy.
+export default function ServerMenu({ server, myMember, isManager, isOwner, channels, cats, counts, onClose, onInvite, reload, go }) {
   const [view, setView] = useState('main');
   const [type, setType] = useState('text');
   const [name, setName] = useState('');
@@ -114,7 +114,7 @@ export default function ServerMenu({ server, me, myMember, isManager, isOwner, c
         <form onSubmit={saveNick}>
           <label>Nickname in this server</label>
           <input required minLength={2} maxLength={32} value={nick} onChange={(e) => setNick(e.target.value)} />
-          <p className='mute' style={{ marginTop: 0 }}>Only this server sees your nickname. Leave it as your name to keep things simple.</p>
+          <p className='mute' style={{ marginTop: 0 }}>Only this server sees your nickname.</p>
           {err && <p className='bad'>{err}</p>}
           <div className='row'>
             <button disabled={busy}>Save</button>
@@ -125,7 +125,25 @@ export default function ServerMenu({ server, me, myMember, isManager, isOwner, c
     );
   }
 
+  // Real setup progress, worked out from what the server actually has.
+  const steps = [
+    { t: 'Invite your friends', done: counts.members > 1, run: onInvite },
+    { t: 'Add a server icon', done: !!server.icon_url, href: `/servers/${server.id}/settings/overview` },
+    { t: 'Create a channel', done: channels.length > 2, run: () => { setView('channel'); setType('text'); } },
+    { t: 'Add a bot', done: counts.bots > 0, href: '/bots' },
+  ];
+  const doneN = steps.filter((s) => s.done).length;
+  const next = steps.find((s) => !s.done);
   const allowDm = myMember?.allow_dm ?? true;
+
+  const setupBody = next && (
+    <>
+      <b>Resume your server setup</b>
+      <small>Step {doneN + 1} of {steps.length}: {next.t}</small>
+      <div className='bar'><i style={{ width: Math.max(6, (doneN / steps.length) * 100) + '%' }} /></div>
+    </>
+  );
+
   return (
     <Sheet onClose={onClose}>
       <div className='sh-head'>
@@ -134,11 +152,15 @@ export default function ServerMenu({ server, me, myMember, isManager, isOwner, c
       </div>
 
       <div className='sh-quick'>
-        <button className='flat sh-q' onClick={onInvite}><span className='i'><Ic n='userplus' s={24} /></span>Invite</button>
-        {isManager ? <Link className='flat sh-q' href={`/servers/${server.id}/settings`}><span className='i'><Ic n='gear' s={24} /></span>Settings</Link> : <Link className='flat sh-q' href='/dm'><span className='i'><Ic n='chat' s={24} /></span>Messages</Link>}
-        <Link className='flat sh-q' href={`/servers/${server.id}/check`}><span className='i'><Ic n='check' s={24} /></span>Check</Link>
-        <button className='flat sh-q' onClick={copyId}><span className='i'><Ic n='copy' s={24} /></span>{copied ? 'Copied' : 'Copy ID'}</button>
+        <button className='flat sh-q' onClick={onInvite}><span className='i'><Ic n='userplus' s={26} /></span>Invite</button>
+        <Link className='flat sh-q' href='/dm'><span className='i'><Ic n='chat' s={26} /></span>Messages</Link>
+        <Link className='flat sh-q' href={`/servers/${server.id}/check`}><span className='i'><Ic n='check' s={26} /></span>Check</Link>
+        {isManager ? <Link className='flat sh-q' href={`/servers/${server.id}/settings`}><span className='i'><Ic n='gear' s={26} /></span>Settings</Link> : <button className='flat sh-q' onClick={copyId}><span className='i'><Ic n='copy' s={26} /></span>{copied ? 'Copied' : 'Copy ID'}</button>}
       </div>
+
+      {isManager && next && (next.href
+        ? <Link className='flat setup' href={next.href}>{setupBody}</Link>
+        : <button className='flat setup' onClick={next.run}>{setupBody}</button>)}
 
       {isManager && (
         <div className='sh-group'>
@@ -157,6 +179,7 @@ export default function ServerMenu({ server, me, myMember, isManager, isOwner, c
       </div>
 
       <div className='sh-group'>
+        <button className='flat sh-row' onClick={copyId}>{copied ? 'Copied' : 'Copy Server ID'}</button>
         <button className='flat sh-row red' onClick={leave}>{isOwner ? 'Delete server' : 'Leave server'}</button>
       </div>
     </Sheet>

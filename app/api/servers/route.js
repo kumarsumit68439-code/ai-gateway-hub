@@ -6,7 +6,7 @@ import { fail, seedRoles, userCard } from '@/lib/discord';
 export const dynamic = 'force-dynamic';
 const MAX_SERVERS = 10;
 
-// Create a server with default roles, a text channel and a voice channel.
+// Create a server with default roles, two categories, a text channel and a voice channel.
 export async function POST(req) {
   const user = await getUser(req);
   if (!user) return fail(401, 'Not logged in.');
@@ -27,9 +27,16 @@ export async function POST(req) {
   const me = await userCard(db, user);
   await db.from('server_members').insert({ server_id: server.id, user_id: user.id, user_name: me.name, user_avatar: me.avatar, role: 'owner' });
   await seedRoles(db, server.id);
+
+  const { data: cats } = await db.from('channel_categories').insert([
+    { server_id: server.id, name: 'Text Channels', position: 0 },
+    { server_id: server.id, name: 'Voice Channels', position: 1 },
+  ]).select('id,name');
+  const text = cats?.find((c) => c.name === 'Text Channels');
+  const voice = cats?.find((c) => c.name === 'Voice Channels');
   await db.from('channels').insert([
-    { server_id: server.id, name: 'general', type: 'text', position: 0 },
-    { server_id: server.id, name: 'lounge', type: 'voice', position: 1 },
+    { server_id: server.id, name: 'general', type: 'text', position: 0, category_id: text?.id || null },
+    { server_id: server.id, name: 'lounge', type: 'voice', position: 1, category_id: voice?.id || null },
   ]);
   return NextResponse.json({ id: server.id });
 }

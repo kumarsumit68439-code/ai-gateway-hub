@@ -5,7 +5,7 @@ import { sb } from '@/lib/supabase-browser';
 import Ic from '@/components/Ic';
 import './dx.css';
 
-// Left rail: dashboard, direct messages and your servers.
+// Left rail: direct messages first, then your servers, then create or join.
 export default function Rail({ activeId, dm }) {
   const [servers, setServers] = useState([]);
 
@@ -19,8 +19,7 @@ export default function Rail({ activeId, dm }) {
 
   return (
     <aside className='dx-rail'>
-      <Link className='flat dx-ico' href='/dashboard' title='Dashboard'><Ic n='grid' s={22} /></Link>
-      <Link className={'flat dx-ico' + (dm ? ' on' : '')} href='/dm' title='Direct messages'><span className='pill' /><Ic n='chat' s={22} /></Link>
+      <Link className={'flat dx-ico' + (dm ? ' on' : '')} href='/dm' title='Direct messages'><span className='pill' /><Ic n='chat' s={26} /></Link>
       <span className='dx-sep' />
       {servers.map((s) => (
         <Link key={s.id} href={'/servers/' + s.id} title={s.name} className={'flat dx-ico' + (activeId === s.id ? ' on' : '')}>
@@ -28,7 +27,7 @@ export default function Rail({ activeId, dm }) {
           {s.icon_url ? <img src={s.icon_url} alt='' referrerPolicy='no-referrer' /> : s.name.slice(0, 2).toUpperCase()}
         </Link>
       ))}
-      <Link className='flat dx-ico' href='/servers' title='Create or join a server'><Ic n='plus' s={22} /></Link>
+      <Link className='flat dx-ico' href='/servers' title='Create or join a server'><Ic n='plus' s={26} /></Link>
     </aside>
   );
 }

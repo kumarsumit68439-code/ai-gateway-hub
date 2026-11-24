@@ -122,6 +122,11 @@ export default function ServerShell({ id, channelId }) {
   })();
   const onlineCount = members.filter(isOn).length;
 
+  async function logout() {
+    await sb().auth.signOut();
+    window.location.href = '/login';
+  }
+
   if (err && !server) return <div className='wrap'><p className='bad'>{err} <Link href='/servers'>Back to servers</Link></p></div>;
   if (!server || !me) return <div className='dx'><Rail activeId={id} /><div className='dx-list'><div className='dx-lhead'><span className='skel' style={{ width: 160, height: 26 }} /></div></div></div>;
 
@@ -129,14 +134,15 @@ export default function ServerShell({ id, channelId }) {
   const go = (p) => router.push(p);
   const open = (cid) => { setSheet(null); go(`/servers/${id}/channels/${cid}`); };
   const uncategorized = channels.filter((c) => !c.category_id || !cats.some((k) => k.id === c.category_id));
+  const myName = myMember?.user_name || me.email;
 
   const row = (c) => (
     <div key={c.id}>
       <Link href={`/servers/${id}/channels/${c.id}`} className={'flat dx-ch' + (channelId === c.id ? ' on' : '')}>
-        <Ic n={c.type === 'voice' ? 'speaker' : 'hash'} s={22} /><span>{c.name}</span>
+        <Ic n={c.type === 'voice' ? 'speaker' : 'hash'} s={24} /><span>{c.name}</span>
       </Link>
       {c.type === 'voice' && vc.some((v) => v.channel_id === c.id) && (
-        <div className='dx-vu'>{vc.filter((v) => v.channel_id === c.id).map((v) => <span key={v.user_id}><Avatar name={v.user_name} size={22} />{v.user_name}</span>)}</div>
+        <div className='dx-vu'>{vc.filter((v) => v.channel_id === c.id).map((v) => <span key={v.user_id}><Avatar name={v.user_name} size={24} />{v.user_name}</span>)}</div>
       )}
     </div>
   );
@@ -147,11 +153,11 @@ export default function ServerShell({ id, channelId }) {
 
       <section className='dx-list'>
         <button className='flat dx-lhead' onClick={() => setSheet('menu')}>
-          <b>{server.name}</b><Ic n='chevR' s={18} />
+          <b>{server.name}</b><Ic n='chevR' s={20} />
         </button>
         <div className='dx-actions'>
-          <button className='flat dx-search' onClick={() => setSheet('search')}><Ic n='search' s={19} />Search</button>
-          <button className='flat dx-sq' onClick={() => setSheet('invite')} aria-label='Invite'><Ic n='userplus' s={20} /></button>
+          <button className='flat dx-search' onClick={() => setSheet('search')}><Ic n='search' s={21} />Search</button>
+          <button className='flat dx-sq' onClick={() => setSheet('invite')} aria-label='Invite'><Ic n='userplus' s={22} /></button>
         </div>
         <div className='dx-chs'>
           {uncategorized.map(row)}
@@ -165,11 +171,11 @@ export default function ServerShell({ id, channelId }) {
           ))}
           {channels.length === 0 && <p className='mute' style={{ padding: 12 }}>No channels yet.</p>}
         </div>
-        <div className='dx-user'>
-          <span className='sdot on'><Avatar src={myMember?.user_avatar} name={myMember?.user_name || me.email} size={40} /></span>
-          <div className='who'><b>{myMember?.user_name || me.email}</b><small>Online</small></div>
-          <Link className='flat dx-sq' href='/settings' aria-label='Settings' style={{ background: 'none' }}><Ic n='gear' s={20} /></Link>
-        </div>
+        <button className='flat dx-user' onClick={() => setSheet('user')}>
+          <span className='sdot on'><Avatar src={myMember?.user_avatar} name={myName} size={50} /></span>
+          <span className='who'><b>{myName}<Ic n='chevD' s={16} /></b><small>Online</small></span>
+          <span className='tail'><Ic n='gear' s={22} /></span>
+        </button>
       </section>
 
       <section className='dx-main'>
@@ -180,21 +186,21 @@ export default function ServerShell({ id, channelId }) {
             <div className='dx-top'>
               <Link className='flat dx-sq dx-back' href={`/servers/${id}`} aria-label='Back'><Ic n='back' s={22} /></Link>
               <div className='tt'>
-                <div className='t'><Ic n={cur.type === 'voice' ? 'speaker' : 'hash'} s={20} />{cur.name}</div>
+                <div className='t'><Ic n={cur.type === 'voice' ? 'speaker' : 'hash'} s={22} />{cur.name}<Ic n='chevR' s={16} /></div>
                 <div className='sub'><span className='gdot' />{onlineCount} Online</div>
               </div>
-              <button className='flat dx-sq' onClick={() => setSheet('search')} aria-label='Search'><Ic n='search' s={20} /></button>
-              <button className='flat dx-sq' onClick={() => setMembersOpen(!membersOpen)} aria-label='Members'><Ic n='people' s={20} /></button>
+              <button className='flat dx-sq' onClick={() => setSheet('search')} aria-label='Search'><Ic n='search' s={21} /></button>
+              <button className='flat dx-sq' onClick={() => setMembersOpen(!membersOpen)} aria-label='Members'><Ic n='people' s={21} /></button>
             </div>
             {cur.type === 'text'
               ? <ChatPanel key={cur.id} channel={cur} roleColor={roleColor} onProfile={setProfileId} />
-              : <VoiceRoom key={cur.id} channel={cur} me={{ id: me.id, name: myMember?.user_name || me.email }} />}
+              : <VoiceRoom key={cur.id} channel={cur} me={{ id: me.id, name: myName }} />}
           </>
         )}
       </section>
 
       <aside className={'dx-members' + (membersOpen ? ' open' : '')}>
-        <div className='dx-top' style={{ minHeight: 60 }}>
+        <div className='dx-top' style={{ minHeight: 62 }}>
           <div className='tt'><div className='t'>Members</div></div>
           <button className='flat dx-sq dx-back' onClick={() => setMembersOpen(false)} aria-label='Close'><Ic n='x' s={20} /></button>
         </div>
@@ -222,9 +228,24 @@ export default function ServerShell({ id, channelId }) {
         </div>
       </aside>
 
-      {sheet === 'menu' && <ServerMenu server={server} me={me} myMember={myMember} isManager={isManager} isOwner={isOwner} channels={channels} cats={cats} onClose={() => setSheet(null)} onInvite={() => setSheet('invite')} reload={load} go={go} />}
+      {sheet === 'menu' && <ServerMenu server={server} myMember={myMember} isManager={isManager} isOwner={isOwner} channels={channels} cats={cats} counts={{ members: members.length, bots: bots.length }} onClose={() => setSheet(null)} onInvite={() => setSheet('invite')} reload={load} go={go} />}
       {sheet === 'invite' && <InviteSheet server={server} onClose={() => setSheet(null)} />}
       {sheet === 'search' && <SearchSheet server={server} channels={channels} onClose={() => setSheet(null)} onOpen={open} />}
+      {sheet === 'user' && (
+        <Sheet onClose={() => setSheet(null)}>
+          <div className='sh-head'>
+            <span className='sdot on'><Avatar src={myMember?.user_avatar} name={myName} size={72} /></span>
+            <b>{myName}</b>
+          </div>
+          <div className='sh-group'>
+            <Link className='flat sh-row' href='/profile'>Edit profile</Link>
+            <Link className='flat sh-row' href='/settings'>Settings</Link>
+            <Link className='flat sh-row' href='/dm'>Messages</Link>
+            <Link className='flat sh-row' href='/dashboard'>Dashboard</Link>
+          </div>
+          <div className='sh-group'><button className='flat sh-row red' onClick={logout}>Log out</button></div>
+        </Sheet>
+      )}
       {profileId && <ProfilePopup serverId={id} userId={profileId} meId={me.id} onClose={() => setProfileId(null)} />}
     </div>
   );

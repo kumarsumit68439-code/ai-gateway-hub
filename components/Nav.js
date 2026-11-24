@@ -20,11 +20,12 @@ const P = {
   grid: <path d="M4 6h16M4 12h16M4 18h16" />,
   bot: <><rect x="5" y="8" width="14" height="11" rx="3" /><path d="M12 8V4M9 13h.01M15 13h.01M9 17h6" /></>,
   server: <><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /><path d="M7 7.5h.01M7 16.5h.01" /></>,
+  chat: <path d="M4 5h16v11H9l-5 4z" />,
 };
 
 const GROUPS = [
   { title: 'Explore', items: [['/dashboard', 'Dashboard', 'dash'], ['/docs', 'AI API Docs', 'book'], ['/docs/backend', 'Backend Docs', 'db'], ['/models', 'Models', 'cube']] },
-  { title: 'Community', items: [['/servers', 'Servers', 'server'], ['/bots', 'Bots', 'bot'], ['/docs/bots', 'Bot Hosting Guide', 'book']] },
+  { title: 'Community', items: [['/servers', 'Servers', 'server'], ['/dm', 'Messages', 'chat'], ['/bots', 'Bots', 'bot'], ['/docs/bots', 'Bot Hosting Guide', 'book']] },
   { title: 'Keys and playground', items: [['/gateway-keys', 'AI Gateway keys', 'key'], ['/backend-keys', 'Backend keys', 'lock'], ['/playground/ai', 'AI Playground', 'play'], ['/playground/backend', 'Backend Playground', 'term']] },
   { title: 'My account', items: [['/account', 'Verification', 'shield'], ['/profile', 'Profile', 'user'], ['/settings', 'Settings', 'gear']] },
 ];
@@ -37,7 +38,10 @@ function Ico({ name }) {
 
 export default function Nav() {
   const path = usePathname();
-  const hidden = path === '/login';
+  const isLogin = path === '/login';
+  // Server and message screens are full-screen Discord-style apps with their own rail.
+  const shell = path.startsWith('/servers/') || path === '/dm' || path.startsWith('/dm/');
+  const hidden = isLogin || shell;
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState('');
@@ -55,8 +59,25 @@ export default function Nav() {
 
   useEffect(() => {
     document.body.classList.toggle('sb-open', open && !hidden);
-    return () => document.body.classList.remove('sb-open');
-  }, [open, hidden]);
+    document.body.classList.toggle('app-shell', shell);
+    return () => { document.body.classList.remove('sb-open'); document.body.classList.remove('app-shell'); };
+  }, [open, hidden, shell]);
+
+  // Online heartbeat: members see you as online while the app is open.
+  useEffect(() => {
+    if (isLogin) return;
+    const ping = async () => {
+      if (document.hidden) return;
+      try {
+        const s = (await sb().auth.getSession()).data.session;
+        if (s) await fetch('/api/presence', { method: 'POST', headers: { Authorization: 'Bearer ' + s.access_token } });
+      } catch {}
+    };
+    ping();
+    const t = setInterval(ping, 30000);
+    document.addEventListener('visibilitychange', ping);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', ping); };
+  }, [isLogin]);
 
   useEffect(() => { if (window.innerWidth <= 960) setOpen(false); }, [path]);
 

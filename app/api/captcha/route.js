@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { captchaReady } from '@/lib/captcha';
 
 export const dynamic = 'force-dynamic';
 
-// The Turnstile site key is public by design. Served at runtime so no rebuild is needed.
+// "own" means the built-in verification is available.
 export async function GET() {
-  return NextResponse.json({ siteKey: process.env.TURNSTILE_SITE_KEY || null });
+  return NextResponse.json({ siteKey: captchaReady() ? 'own' : null });
 }

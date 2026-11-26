@@ -2,15 +2,21 @@ import { NextResponse } from 'next/server';
 import { admin } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
 import { cleanUrl, fail } from '@/lib/discord';
+import { getNitro, isGifUrl } from '@/lib/nitro';
 
 export const dynamic = 'force-dynamic';
+const DECOS = ['neon', 'gold', 'rainbow', 'sunset', 'frost'];
+const HEX = /^#[0-9a-fA-F]{6}$/;
 
-// Update the profile and keep the name and avatar in sync across all servers.
+// Update the profile. Nitro perks are checked here, not just hidden in the page:
+// Nitro Basic: animated avatar, avatar decoration. Nitro: also banner and profile colors.
 export async function PATCH(req) {
   const user = await getUser(req);
   if (!user) return fail(401, 'Not logged in.');
   let b = {};
   try { b = await req.json(); } catch {}
+  const db = admin();
+  const nit = await getNitro(db, user.id);
 
   const u = { id: user.id, updated_at: new Date().toISOString() };
   if (b.display_name !== undefined) {
@@ -28,15 +34,33 @@ export async function PATCH(req) {
     if (x.length > 300) return fail(400, 'About you is too long (300 max).');
     u.bio = x || null;
   }
-  for (const k of ['avatar_url', 'banner_url']) {
+  if (b.avatar_url !== undefined) {
+    const v = cleanUrl(b.avatar_url);
+    if (v === undefined) return fail(400, 'Image links must be https URLs.');
+    if (v && isGifUrl(v) && nit.rank < 1) return fail(403, 'Animated avatars need Nitro.');
+    u.avatar_url = v;
+  }
+  if (b.banner_url !== undefined) {
+    const v = cleanUrl(b.banner_url);
+    if (v === undefined) return fail(400, 'Image links must be https URLs.');
+    if (v && nit.rank < 2) return fail(403, 'A profile banner needs Nitro.');
+    u.banner_url = v;
+  }
+  for (const k of ['accent1', 'accent2']) {
     if (b[k] !== undefined) {
-      const v = cleanUrl(b[k]);
-      if (v === undefined) return fail(400, 'Image links must be https URLs.');
+      const v = b[k] ? String(b[k]) : null;
+      if (v && !HEX.test(v)) return fail(400, 'Pick a valid color.');
+      if (v && nit.rank < 2) return fail(403, 'Profile colors need Nitro.');
       u[k] = v;
     }
   }
+  if (b.avatar_deco !== undefined) {
+    const v = b.avatar_deco ? String(b.avatar_deco) : null;
+    if (v && !DECOS.includes(v)) return fail(400, 'Unknown decoration.');
+    if (v && nit.rank < 1) return fail(403, 'Avatar decorations need Nitro.');
+    u.avatar_deco = v;
+  }
 
-  const db = admin();
   const { error } = await db.from('profiles').upsert(u);
   if (error) return fail(500, 'Could not save profile.');
 

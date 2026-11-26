@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { admin } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
 import { canManage, cleanUrl, fail, isUuid } from '@/lib/discord';
+import { isGifUrl, serverLevel } from '@/lib/nitro';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ export async function DELETE(req, { params }) {
   return NextResponse.json({ ok: true, left: true });
 }
 
-// Rename the server or change its icon link (owner or manager).
+// Rename, change icon or banner, or set a custom invite link (some perks need a boost level).
 export async function PATCH(req, { params }) {
   const user = await getUser(req);
   if (!user) return fail(401, 'Not logged in.');
@@ -31,6 +32,9 @@ export async function PATCH(req, { params }) {
   const perm = await canManage(db, params.id, user.id);
   if (!perm.exists) return fail(404, 'Server not found.');
   if (!perm.ok) return fail(403, 'You do not have permission to do that.');
+
+  let level;
+  const lvl = async () => (level ??= await serverLevel(db, params.id));
 
   let b = {};
   try { b = await req.json(); } catch {}
@@ -43,10 +47,23 @@ export async function PATCH(req, { params }) {
   if (b.icon_url !== undefined) {
     const v = cleanUrl(b.icon_url);
     if (v === undefined) return fail(400, 'Icon link must be an https URL.');
+    if (v && isGifUrl(v) && (await lvl()) < 1) return fail(403, 'Animated icons unlock at Boost Level 1.');
     u.icon_url = v;
+  }
+  if (b.banner_url !== undefined) {
+    const v = cleanUrl(b.banner_url);
+    if (v === undefined) return fail(400, 'Banner link must be an https URL.');
+    if (v && (await lvl()) < 2) return fail(403, 'A server banner unlocks at Boost Level 2.');
+    u.banner_url = v;
+  }
+  if (b.invite_code !== undefined) {
+    const c = String(b.invite_code).trim().toLowerCase();
+    if (!/^[a-z0-9-]{3,20}$/.test(c)) return fail(400, 'Invite link: 3-20 letters, numbers or dashes.');
+    if ((await lvl()) < 3) return fail(403, 'A custom invite link unlocks at Boost Level 3.');
+    u.invite_code = c;
   }
   if (!Object.keys(u).length) return fail(400, 'Nothing to update.');
   const { error } = await db.from('servers').update(u).eq('id', params.id);
-  if (error) return fail(500, 'Could not save.');
+  if (error) return fail(400, u.invite_code ? 'That invite link is already taken.' : 'Could not save.');
   return NextResponse.json({ ok: true });
 }

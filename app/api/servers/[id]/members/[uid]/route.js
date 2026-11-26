@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { admin } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
 import { canManage, fail, isUuid, seenRecently } from '@/lib/discord';
+import { getNitro } from '@/lib/nitro';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,16 +18,22 @@ export async function GET(req, { params }) {
   const m = rows.find((r) => r.user_id === params.uid);
   if (!m) return fail(404, 'Member not found.');
 
-  const [{ data: p }, { data: mr }] = await Promise.all([
-    db.from('profiles').select('bio,company,avatar_url,banner_url').eq('id', params.uid).maybeSingle(),
+  const [{ data: p }, { data: mr }, nit] = await Promise.all([
+    db.from('profiles').select('bio,company,avatar_url,banner_url,accent1,accent2,avatar_deco').eq('id', params.uid).maybeSingle(),
     db.from('member_roles').select('server_roles(id,name,color,position)').eq('server_id', params.id).eq('user_id', params.uid),
+    getNitro(db, params.uid),
   ]);
   const roles = (mr || []).map((x) => x.server_roles).filter(Boolean).sort((a, b) => a.position - b.position);
+  // Perks only show while the person still has Nitro.
   return NextResponse.json({
     id: m.user_id,
     name: m.user_name,
     avatar: m.user_avatar || p?.avatar_url || null,
-    banner: p?.banner_url || null,
+    banner: nit.rank >= 2 ? p?.banner_url || null : null,
+    accent1: nit.rank >= 2 ? p?.accent1 || null : null,
+    accent2: nit.rank >= 2 ? p?.accent2 || null : null,
+    deco: nit.rank >= 1 ? p?.avatar_deco || null : null,
+    nitro: nit.plan,
     bio: p?.bio || null,
     company: p?.company || null,
     joined_at: m.joined_at,

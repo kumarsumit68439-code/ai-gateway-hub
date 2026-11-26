@@ -5,14 +5,14 @@ import { fail, userCard } from '@/lib/discord';
 
 export const dynamic = 'force-dynamic';
 
-// Join a server with an invite code.
+// Join a server with an invite code (generated or custom).
 export async function POST(req) {
   const user = await getUser(req);
   if (!user) return fail(401, 'Not logged in.');
   let b = {};
   try { b = await req.json(); } catch {}
   const code = String(b.code || '').trim().toLowerCase();
-  if (!/^[a-f0-9]{10}$/.test(code)) return fail(400, 'That invite code is not valid.');
+  if (!/^[a-z0-9-]{3,20}$/.test(code)) return fail(400, 'That invite code is not valid.');
 
   const db = admin();
   const { data: server } = await db.from('servers').select('id').eq('invite_code', code).maybeSingle();

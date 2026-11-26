@@ -10,7 +10,7 @@ export async function GET(req, { params }) {
   const user = await getUser(req);
   if (!user) return fail(401, 'Not logged in.');
   const code = String(params.code || '').toLowerCase();
-  if (!/^[a-f0-9]{10}$/.test(code)) return fail(404, 'That invite is invalid or expired.');
+  if (!/^[a-z0-9-]{3,20}$/.test(code)) return fail(404, 'That invite is invalid or expired.');
   const db = admin();
   const { data: server } = await db.from('servers').select('id,name').eq('invite_code', code).maybeSingle();
   if (!server) return fail(404, 'That invite is invalid or expired.');

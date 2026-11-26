@@ -22,6 +22,11 @@ const P = {
   grid: <><rect x='3' y='3' width='7' height='7' rx='1.5' /><rect x='14' y='3' width='7' height='7' rx='1.5' /><rect x='3' y='14' width='7' height='7' rx='1.5' /><rect x='14' y='14' width='7' height='7' rx='1.5' /></>,
   bot: <><rect x='5' y='8' width='14' height='11' rx='3' /><path d='M12 8V4M9 13h.01M15 13h.01M9 17h6' /></>,
   check: <><circle cx='12' cy='12' r='9' /><path d='M8 12.5l3 3 5-6' /></>,
+  gift: <><rect x='3' y='8' width='18' height='4' rx='1' /><path d='M12 8v13M5 12v8h14v-8M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 1 1 0 5' /></>,
+  mic: <><rect x='9' y='3' width='6' height='11' rx='3' /><path d='M5 11a7 7 0 0 0 14 0M12 18v3' /></>,
+  calendar: <><rect x='3' y='5' width='18' height='16' rx='3' /><path d='M3 10h18M8 3v4M16 3v4' /></>,
+  boost: <><path d='M12 3l8 4.5v9L12 21l-8-4.5v-9z' /><path d='M12.5 8l-3 4.5h3l-1 3.5 3.5-5h-3z' /></>,
+  stop: <rect x='6' y='6' width='12' height='12' rx='2' />,
 };
 
 // Small line icons used by the Discord-style screens.

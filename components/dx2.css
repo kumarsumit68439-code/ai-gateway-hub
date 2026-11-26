@@ -1,0 +1,24 @@
+.dx-boost{display:flex;align-items:center;gap:12px;width:100%;margin:10px 0 2px;padding:12px 14px;border-radius:14px;color:#f2f3f5;font-size:17px;font-weight:600}
+.dx-boost:hover{background:#26272c}
+.dx-boost .bk{margin-left:auto;font-size:13px;color:#f472b6;font-weight:700}
+.ubadge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#f23f42;color:#fff;font-size:12px;font-weight:800;display:inline-grid;place-items:center;flex:none;box-sizing:border-box}
+.dx-ch.unread{color:#fff;font-weight:700}
+.dx-ch .ubadge{margin-left:auto}
+.dx-ico .ubadge{position:absolute;right:-6px;bottom:-6px;border:3px solid #101114;box-sizing:content-box;min-width:14px;height:14px;font-size:11px}
+.dx-banner{height:100px;background:linear-gradient(135deg,#5865f2,#22d3ee);background-size:cover;background-position:center;border-radius:24px 0 0 0}
+.att{margin-top:6px}
+.att img{max-width:min(360px,100%);max-height:320px;border-radius:12px;display:block}
+.att audio{width:min(320px,100%)}
+.rec{display:flex;align-items:center;gap:10px;flex:1;padding:6px 10px;color:#f87171;font-weight:600}
+.rec i{width:10px;height:10px;border-radius:50%;background:#f23f42;animation:recblink 1s steps(2) infinite}
+@keyframes recblink{50%{opacity:.2}}
+.ev{padding:14px 16px;border-radius:16px;background:#2b2c31;margin-bottom:10px}
+.ev h4{margin:0 0 2px;font-size:17px}
+.ev .when{color:#23a55a;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.ev p{margin:6px 0;color:#c7c9cd;font-size:15px}
+.lvl{display:flex;gap:8px;margin:12px 0}
+.lvl span{flex:1;padding:10px 6px;border-radius:12px;background:#2b2c31;text-align:center;font-size:13px;color:#9a9ca3}
+.lvl span.on{background:#3a2a52;color:#f9a8d4;border:1px solid #be185d}
+.perk{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-top:1px solid #34363c;color:#d4d6da;font-size:15px}
+.perk.off{opacity:.45}
+.bigmark{width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#ec4899,#8b5cf6);display:grid;place-items:center;color:#fff;margin-bottom:8px}

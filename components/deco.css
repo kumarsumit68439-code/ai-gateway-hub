@@ -1,0 +1,6 @@
+.deco{display:inline-flex;border-radius:50%;flex:none}
+.deco-neon{box-shadow:0 0 0 3px #22d3ee,0 0 16px 2px #22d3ee}
+.deco-gold{box-shadow:0 0 0 3px #fbbf24,0 0 14px #f59e0b}
+.deco-rainbow{padding:3px;background:conic-gradient(#f43f5e,#f59e0b,#22c55e,#06b6d4,#6366f1,#ec4899,#f43f5e)}
+.deco-sunset{padding:3px;background:linear-gradient(135deg,#f97316,#ec4899,#8b5cf6)}
+.deco-frost{box-shadow:0 0 0 3px #bae6fd,0 0 18px #7dd3fc,0 0 0 6px rgba(186,230,253,.25)}

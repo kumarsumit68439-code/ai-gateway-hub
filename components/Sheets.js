@@ -8,7 +8,6 @@ import { Sheet } from '@/components/ServerMenu';
 import './dx.css';
 import './dx2.css';
 
-const usd = (c) => '$' + (c / 100).toFixed(2);
 const fmtWhen = (d) => new Date(d).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 // Server events with Interested and create/delete for managers.
@@ -93,7 +92,7 @@ export function EventsSheet({ server, channels, canManage, meId, onClose }) {
   );
 }
 
-// Server Boosts: level, progress and perks. Boosting needs Nitro.
+// Server Boosts: level, progress and perks. Boosting needs Nitro (which is free).
 export function BoostSheet({ server, onClose }) {
   const [i, setI] = useState(null);
   const [err, setErr] = useState('');
@@ -112,11 +111,7 @@ export function BoostSheet({ server, onClose }) {
     setBusy(false);
   }
 
-  const perks = [
-    [1, 'Animated server icon (GIF)'],
-    [2, 'Server banner'],
-    [3, 'Custom invite link'],
-  ];
+  const perks = [[1, 'Animated server icon (GIF)'], [2, 'Server banner'], [3, 'Custom invite link']];
   return (
     <Sheet onClose={onClose}>
       <div className='bigmark'><Ic n='boost' s={34} /></div>
@@ -135,7 +130,7 @@ export function BoostSheet({ server, onClose }) {
                 {i.mine > 0 && <button className='ghost' onClick={() => act('DELETE')} disabled={busy}>Remove my boost</button>}
                 <span className='mute'>{i.free} of 2 boosts available</span>
               </div>
-            ) : <p className='mute'>Boosting a server needs Nitro. <Link href='/nitro'>Get Nitro</Link></p>}
+            ) : <p className='mute'>Boosting a server needs Nitro. <Link href='/nitro'>Get free Nitro</Link></p>}
           </div>
         </>
       )}
@@ -144,11 +139,10 @@ export function BoostSheet({ server, onClose }) {
   );
 }
 
-// Gift Nitro: buy a code, then send the link in the chat.
+// Gift Nitro: turn some of your own Nitro days into a code, then send the link in the chat.
 export function GiftSheet({ onClose, onSend }) {
   const [d, setD] = useState(null);
-  const [plan, setPlan] = useState('nitro');
-  const [months, setMonths] = useState(1);
+  const [days, setDays] = useState(1);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState('');
@@ -156,35 +150,36 @@ export function GiftSheet({ onClose, onSend }) {
   const load = useCallback(async () => { const r = await api('GET', '/api/nitro'); if (r.ok) setD(r.j); }, []);
   useEffect(() => { load(); }, [load]);
 
-  async function buy() {
+  async function make() {
     setBusy(true); setErr('');
-    const r = await api('POST', '/api/nitro/gift', { plan, months });
-    if (r.ok) window.location.href = r.j.url; else { setErr(r.j.error || 'Could not start checkout.'); setBusy(false); }
+    const r = await api('POST', '/api/nitro/gift', { days });
+    if (!r.ok) setErr(r.j.error || 'Could not create the gift.');
+    await load();
+    setBusy(false);
   }
   const link = (code) => window.location.origin + '/gift/' + code;
   const open = (d?.gifts || []).filter((g) => !g.redeemed_by);
+  const left = d?.nitro.period_end ? Math.max(0, Math.floor((new Date(d.nitro.period_end) - Date.now()) / 3600e3)) : 0;
 
   return (
     <Sheet title='Gift Nitro' onClose={onClose}>
       {!d && <div className='skel' style={{ height: 120 }} />}
       {d && (
         <>
-          <div className='seg'>
-            {Object.entries(d.plans).map(([k, p]) => <button key={k} type='button' className={plan === k ? 'on' : ''} onClick={() => setPlan(k)}>{p.name}</button>)}
-          </div>
-          <div className='seg'>
-            <button type='button' className={months === 1 ? 'on' : ''} onClick={() => setMonths(1)}>1 month \u00b7 {usd(d.plans[plan].month)}</button>
-            <button type='button' className={months === 12 ? 'on' : ''} onClick={() => setMonths(12)}>1 year \u00b7 {usd(d.plans[plan].year)}</button>
-          </div>
-          <button onClick={buy} disabled={busy || !d.ready}>{busy ? 'Opening checkout\u2026' : 'Buy gift'}</button>
-          {!d.ready && <p className='mute'>Payments are not available yet.</p>}
+          {d.nitro.active ? (
+            <>
+              <p className='mute' style={{ marginTop: 0 }}>You have about {Math.floor(left / 24)}d {left % 24}h of Nitro. Gifting takes those days from your Nitro.</p>
+              <div className='seg'>{[1, 3, 7].map((n) => <button key={n} type='button' className={days === n ? 'on' : ''} onClick={() => setDays(n)}>{n} day{n === 1 ? '' : 's'}</button>)}</div>
+              <button onClick={make} disabled={busy}>{busy ? 'Creating\u2026' : 'Create gift'}</button>
+            </>
+          ) : <p className='mute' style={{ marginTop: 0 }}>You need Nitro to gift it. <Link href='/nitro'>Get free Nitro</Link></p>}
           {err && <p className='bad'>{err}</p>}
           {open.length > 0 && (
             <>
               <h3 style={{ marginTop: 22 }}>Your gifts</h3>
               {open.map((g) => (
                 <div className='ev' key={g.code}>
-                  <b>{d.plans[g.plan].name}</b> <span className='mute'>{g.months === 12 ? '1 year' : '1 month'}</span>
+                  <b>Nitro</b> <span className='mute'>{g.days} day{g.days === 1 ? '' : 's'}</span>
                   <div className='row' style={{ marginTop: 8 }}>
                     {onSend && <button className='small' onClick={() => { onSend(link(g.code)); onClose(); }}>Send in chat</button>}
                     <button className='ghost small' onClick={() => { navigator.clipboard.writeText(link(g.code)); setCopied(g.code); setTimeout(() => setCopied(''), 1400); }}>{copied === g.code ? 'Copied' : 'Copy link'}</button>

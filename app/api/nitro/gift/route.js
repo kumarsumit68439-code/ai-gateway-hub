@@ -1,34 +1,32 @@
 import { NextResponse } from 'next/server';
+import { admin } from '@/lib/supabase';
 import { getUser } from '@/lib/auth';
 import { fail } from '@/lib/discord';
-import { PLANS, stripe, stripeReady } from '@/lib/nitro';
+import { DAY_MS, GIFT_DAYS, getNitro } from '@/lib/nitro';
+import crypto from 'node:crypto';
 
 export const dynamic = 'force-dynamic';
 
-// Buy a Nitro gift code (one-time payment). The code appears in your gifts after payment.
+// Gift some of your own Nitro days. The days leave your Nitro and go into a code you can share.
 export async function POST(req) {
   const user = await getUser(req);
   if (!user) return fail(401, 'Not logged in.');
-  if (!stripeReady()) return fail(503, 'Payments are not available yet.');
-
   let b = {};
   try { b = await req.json(); } catch {}
-  const plan = PLANS[b.plan] ? b.plan : null;
-  const months = Number(b.months) === 12 ? 12 : 1;
-  if (!plan) return fail(400, 'Choose a plan.');
+  const days = Number(b.days);
+  if (!GIFT_DAYS.includes(days)) return fail(400, 'Choose 1, 3 or 7 days.');
 
-  const origin = new URL(req.url).origin;
-  try {
-    const s = await stripe('checkout/sessions', {
-      mode: 'payment',
-      customer_email: user.email,
-      success_url: origin + '/nitro?gift=success',
-      cancel_url: origin + '/nitro',
-      line_items: [{ quantity: 1, price_data: { currency: 'usd', unit_amount: months === 12 ? PLANS[plan].year : PLANS[plan].month, product_data: { name: `${PLANS[plan].name} gift (${months === 12 ? '1 year' : '1 month'})` } } }],
-      metadata: { kind: 'gift', buyer_id: user.id, plan, months },
-    });
-    return NextResponse.json({ url: s.url });
-  } catch {
-    return fail(502, 'Could not start checkout. Please try again.');
-  }
+  const db = admin();
+  const n = await getNitro(db, user.id);
+  const end = n.row?.current_period_end ? new Date(n.row.current_period_end).getTime() : 0;
+  if (!n.active || end - Date.now() < days * DAY_MS) return fail(400, `You need at least ${days} day${days === 1 ? '' : 's'} of Nitro left to gift that much.`);
+
+  const { count } = await db.from('nitro_gifts').select('code', { count: 'exact', head: true }).eq('buyer_id', user.id).is('redeemed_by', null);
+  if ((count || 0) >= 5) return fail(400, 'You can hold up to 5 unredeemed gifts.');
+
+  const code = crypto.randomBytes(12).toString('hex').slice(0, 16);
+  const { error } = await db.from('nitro_gifts').insert({ code, plan: 'nitro', days, buyer_id: user.id });
+  if (error) return fail(500, 'Could not create the gift.');
+  await db.from('nitro').update({ current_period_end: new Date(end - days * DAY_MS).toISOString(), updated_at: new Date().toISOString() }).eq('user_id', user.id);
+  return NextResponse.json({ ok: true, code });
 }

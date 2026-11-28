@@ -6,6 +6,7 @@ const items = [
   ['/dashboard', 'D', 'Dashboard', 'Usage and requests'],
   ['/servers', 'V', 'Servers', 'Chat and voice like Discord'],
   ['/dm', 'N', 'Messages', 'Direct messages with members'],
+  ['/nitro', 'F', 'Nitro', 'Free Nitro: watch ads, claim, gift'],
   ['/bots', 'T', 'Bots', 'Create, host and invite bots'],
   ['/docs/bots', 'H', 'Bot Hosting Guide', 'VPS, Docker, Node.js, Python'],
   ['/gateway-keys', 'G', 'AI Gateway keys', 'Call AI models'],
@@ -16,7 +17,7 @@ const items = [
   ['/docs/backend', 'E', 'Backend Docs', 'Data endpoints and examples'],
   ['/models', 'M', 'Models', 'Browse all models'],
   ['/account', 'C', 'Verification', 'Email and security'],
-  ['/profile', 'U', 'Profile', 'Your avatar, banner and bio'],
+  ['/profile', 'U', 'Profile', 'Avatar, banner, colors and decorations'],
   ['/settings', 'S', 'Settings', 'Password and sessions'],
 ];
 

@@ -21,11 +21,12 @@ export async function POST(req) {
   const { data: views } = await db.from('ad_views').select('id').eq('user_id', user.id).not('completed_at', 'is', null).is('claimed_at', null).order('completed_at').limit(ADS_PER_CLAIM);
   if ((views || []).length < ADS_PER_CLAIM) return fail(400, `Watch ${ADS_PER_CLAIM} ads to claim Nitro.`);
 
-  // Check the cap before using up the ads.
-  const probe = await grantDays(db, user.id, 0, 'ads');
-  void probe;
+  // Use up the ads first so the same ads cannot be claimed twice, and give them back if the grant fails.
   const claimed = await db.from('ad_views').update({ claimed_at: new Date().toISOString() }).in('id', views.map((v) => v.id)).is('claimed_at', null).select('id');
-  if ((claimed.data || []).length < ADS_PER_CLAIM) return fail(400, 'Those ads were already used.');
+  if ((claimed.data || []).length < ADS_PER_CLAIM) {
+    if (claimed.data?.length) await db.from('ad_views').update({ claimed_at: null }).in('id', claimed.data.map((v) => v.id));
+    return fail(400, 'Those ads were already used.');
+  }
 
   const g = await grantDays(db, user.id, CLAIM_DAYS, 'ads');
   if (!g.ok) {

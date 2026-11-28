@@ -21,16 +21,17 @@ const P = {
   bot: <><rect x="5" y="8" width="14" height="11" rx="3" /><path d="M12 8V4M9 13h.01M15 13h.01M9 17h6" /></>,
   server: <><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /><path d="M7 7.5h.01M7 16.5h.01" /></>,
   chat: <path d="M4 5h16v11H9l-5 4z" />,
+  boost: <><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" /><path d="M12.5 8l-3 4.5h3l-1 3.5 3.5-5h-3z" /></>,
 };
 
 const GROUPS = [
   { title: 'Explore', items: [['/dashboard', 'Dashboard', 'dash'], ['/docs', 'AI API Docs', 'book'], ['/docs/backend', 'Backend Docs', 'db'], ['/models', 'Models', 'cube']] },
-  { title: 'Community', items: [['/servers', 'Servers', 'server'], ['/dm', 'Messages', 'chat'], ['/bots', 'Bots', 'bot'], ['/docs/bots', 'Bot Hosting Guide', 'book']] },
+  { title: 'Community', items: [['/servers', 'Servers', 'server'], ['/dm', 'Messages', 'chat'], ['/nitro', 'Nitro', 'boost'], ['/bots', 'Bots', 'bot'], ['/docs/bots', 'Bot Hosting Guide', 'book']] },
   { title: 'Keys and playground', items: [['/gateway-keys', 'AI Gateway keys', 'key'], ['/backend-keys', 'Backend keys', 'lock'], ['/playground/ai', 'AI Playground', 'play'], ['/playground/backend', 'Backend Playground', 'term']] },
   { title: 'My account', items: [['/account', 'Verification', 'shield'], ['/profile', 'Profile', 'user'], ['/settings', 'Settings', 'gear']] },
 ];
 
-const top = [['/dashboard', 'Dashboard'], ['/servers', 'Servers'], ['/bots', 'Bots'], ['/docs', 'API Docs']];
+const top = [['/dashboard', 'Dashboard'], ['/servers', 'Servers'], ['/bots', 'Bots'], ['/nitro', 'Nitro'], ['/docs', 'API Docs']];
 
 function Ico({ name }) {
   return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{P[name]}</svg>;

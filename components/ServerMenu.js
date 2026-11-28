@@ -36,8 +36,8 @@ export function InviteSheet({ server, onClose }) {
   );
 }
 
-// Server menu: quick actions, setup progress, create channel or category, per-server profile, privacy.
-export default function ServerMenu({ server, myMember, isManager, isOwner, channels, cats, counts, onClose, onInvite, reload, go }) {
+// Server menu: quick actions, mark as read, setup progress, create channel or category, per-server profile, privacy.
+export default function ServerMenu({ server, myMember, isManager, isOwner, channels, cats, counts, unreadTotal, onMarkRead, onClose, onInvite, reload, go }) {
   const [view, setView] = useState('main');
   const [type, setType] = useState('text');
   const [name, setName] = useState('');
@@ -156,6 +156,10 @@ export default function ServerMenu({ server, myMember, isManager, isOwner, chann
         <Link className='flat sh-q' href='/dm'><span className='i'><Ic n='chat' s={26} /></span>Messages</Link>
         <Link className='flat sh-q' href={`/servers/${server.id}/check`}><span className='i'><Ic n='check' s={26} /></span>Check</Link>
         {isManager ? <Link className='flat sh-q' href={`/servers/${server.id}/settings`}><span className='i'><Ic n='gear' s={26} /></span>Settings</Link> : <button className='flat sh-q' onClick={copyId}><span className='i'><Ic n='copy' s={26} /></span>{copied ? 'Copied' : 'Copy ID'}</button>}
+      </div>
+
+      <div className='sh-group'>
+        <button className='flat sh-row' onClick={onMarkRead} disabled={!unreadTotal} style={{ opacity: unreadTotal ? 1 : 0.5 }}>Mark As Read</button>
       </div>
 
       {isManager && next && (next.href

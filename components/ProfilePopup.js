@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/client';
 import Avatar from '@/components/Avatar';
 import './dx.css';
+import './nitro.css';
 
-// Member profile card, with a Message button.
+// Member profile card, with a Message button. Nitro customization (colors, decoration, banner) shows here.
 export default function ProfilePopup({ serverId, userId, meId, onClose }) {
   const router = useRouter();
   const [c, setC] = useState(null);
@@ -22,17 +23,21 @@ export default function ProfilePopup({ serverId, userId, meId, onClose }) {
     if (r.ok) router.push('/dm/' + userId); else setErr(r.j.error || 'Could not open the conversation.');
   }
 
+  const bannerStyle = c && (c.banner
+    ? { backgroundImage: `url(${c.banner})` }
+    : c.accent1 ? { background: `linear-gradient(135deg, ${c.accent1}, ${c.accent2 || c.accent1})` } : undefined);
+
   return (
     <div className='sheet-back' onClick={onClose} style={{ alignItems: 'center', padding: 16 }}>
-      <div className='pcard' onClick={(e) => e.stopPropagation()}>
+      <div className='pcard' onClick={(e) => e.stopPropagation()} style={c?.accent1 ? { boxShadow: `0 0 0 2px ${c.accent1}` } : undefined}>
         {!c && !err && <div style={{ padding: 40 }}><div className='skel' style={{ height: 90 }} /></div>}
         {err && !c && <div style={{ padding: 24 }}><p className='bad'>{err}</p><button className='ghost small' onClick={onClose}>Close</button></div>}
         {c && (
           <>
-            <div className='bn' style={c.banner ? { backgroundImage: `url(${c.banner})` } : undefined} />
+            <div className='bn' style={bannerStyle} />
             <div className='bd'>
-              <span className={'pav sdot' + (c.online ? ' on' : '')}><Avatar src={c.avatar} name={c.name} size={80} /></span>
-              <div className='pn'>{c.name}{c.is_owner && <span className='mtag own'>OWNER</span>}</div>
+              <span className={'pav sdot' + (c.online ? ' on' : '')} style={c.deco ? { overflow: 'visible', background: 'none' } : undefined}><Avatar src={c.avatar} name={c.name} size={80} deco={c.deco} /></span>
+              <div className='pn'>{c.name}{c.is_owner && <span className='mtag own'>OWNER</span>}{c.nitro && <span className='nt-badge'>NITRO</span>}</div>
               <div style={{ color: c.online ? '#23a55a' : '#9a9ca3', fontSize: 14 }}>{c.online ? 'Online' : 'Offline' + (c.last_seen_at ? ' \u00b7 last seen ' + new Date(c.last_seen_at).toLocaleString() : '')}</div>
               {c.roles.length > 0 && (
                 <div className='box'><h4>Roles</h4>{c.roles.map((r) => <span className='rchip' key={r.id}><i style={{ background: r.color }} />{r.name}</span>)}</div>

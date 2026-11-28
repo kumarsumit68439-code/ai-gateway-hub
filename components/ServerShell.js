@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { sb } from '@/lib/supabase-browser';
-import { seen } from '@/lib/client';
+import { api, seen } from '@/lib/client';
 import Avatar from '@/components/Avatar';
 import Ic from '@/components/Ic';
 import Rail from '@/components/Rail';
@@ -11,7 +11,9 @@ import ChatPanel from '@/components/ChatPanel';
 import VoiceRoom from '@/components/VoiceRoom';
 import ProfilePopup from '@/components/ProfilePopup';
 import ServerMenu, { InviteSheet, Sheet } from '@/components/ServerMenu';
+import { EventsSheet, BoostSheet } from '@/components/Sheets';
 import './dx.css';
+import './dx2.css';
 
 const botOnline = (b) => b.hosting === 'jilowa' || seen(b.last_seen_at);
 
@@ -58,6 +60,8 @@ export default function ServerShell({ id, channelId }) {
   const [mroles, setMroles] = useState([]);
   const [bots, setBots] = useState([]);
   const [vc, setVc] = useState([]);
+  const [unread, setUnread] = useState({});
+  const [boost, setBoost] = useState(null);
   const [err, setErr] = useState('');
   const [sheet, setSheet] = useState(null);
   const [profileId, setProfileId] = useState(null);
@@ -65,7 +69,7 @@ export default function ServerShell({ id, channelId }) {
   const [collapsed, setCollapsed] = useState({});
 
   const load = useCallback(async () => {
-    const s = await sb().from('servers').select('id,name,owner_id,invite_code,icon_url').eq('id', id).maybeSingle();
+    const s = await sb().from('servers').select('id,name,owner_id,invite_code,icon_url,banner_url').eq('id', id).maybeSingle();
     if (!s.data) { setErr('Server not found, or you are not a member.'); return; }
     setServer(s.data);
     const [ch, ct, m, r, mr, b] = await Promise.all([
@@ -86,6 +90,11 @@ export default function ServerShell({ id, channelId }) {
     } else setVc([]);
   }, [id]);
 
+  const loadUnread = useCallback(async () => {
+    const r = await sb().rpc('unread_counts');
+    setUnread(Object.fromEntries((r.data || []).filter((x) => x.server_id === id).map((x) => [x.channel_id, Number(x.cnt)])));
+  }, [id]);
+
   useEffect(() => {
     (async () => {
       const u = (await sb().auth.getUser()).data.user;
@@ -95,6 +104,17 @@ export default function ServerShell({ id, channelId }) {
     const t = setInterval(load, 10000);
     return () => clearInterval(t);
   }, [id, load]);
+
+  useEffect(() => {
+    loadUnread();
+    const t = setInterval(loadUnread, 10000);
+    window.addEventListener('unread-refresh', loadUnread);
+    return () => { clearInterval(t); window.removeEventListener('unread-refresh', loadUnread); };
+  }, [loadUnread]);
+
+  useEffect(() => {
+    if (!sheet) api('GET', `/api/servers/${id}/boost`).then((r) => { if (r.ok) setBoost(r.j); });
+  }, [id, sheet]);
 
   // On wide screens, open the first text channel automatically.
   useEffect(() => {
@@ -109,6 +129,7 @@ export default function ServerShell({ id, channelId }) {
   const isOwner = !!server && server.owner_id === me?.id;
   const isManager = isOwner || (!!me && mroles.filter((x) => x.user_id === me.id).some((x) => roles.find((r) => r.id === x.role_id)?.can_manage));
   const isOn = (m) => m.user_id === me?.id || seen(m.last_seen_at);
+  const unreadTotal = Object.values(unread).reduce((s, n) => s + n, 0);
 
   const groups = (() => {
     const used = new Set();
@@ -126,6 +147,11 @@ export default function ServerShell({ id, channelId }) {
     await sb().auth.signOut();
     window.location.href = '/login';
   }
+  async function markAllRead() {
+    await api('POST', `/api/servers/${id}/read`);
+    window.dispatchEvent(new Event('unread-refresh'));
+    setSheet(null);
+  }
 
   if (err && !server) return <div className='wrap'><p className='bad'>{err} <Link href='/servers'>Back to servers</Link></p></div>;
   if (!server || !me) return <div className='dx'><Rail activeId={id} /><div className='dx-list'><div className='dx-lhead'><span className='skel' style={{ width: 160, height: 26 }} /></div></div></div>;
@@ -136,30 +162,39 @@ export default function ServerShell({ id, channelId }) {
   const uncategorized = channels.filter((c) => !c.category_id || !cats.some((k) => k.id === c.category_id));
   const myName = myMember?.user_name || me.email;
 
-  const row = (c) => (
-    <div key={c.id}>
-      <Link href={`/servers/${id}/channels/${c.id}`} className={'flat dx-ch' + (channelId === c.id ? ' on' : '')}>
-        <Ic n={c.type === 'voice' ? 'speaker' : 'hash'} s={24} /><span>{c.name}</span>
-      </Link>
-      {c.type === 'voice' && vc.some((v) => v.channel_id === c.id) && (
-        <div className='dx-vu'>{vc.filter((v) => v.channel_id === c.id).map((v) => <span key={v.user_id}><Avatar name={v.user_name} size={24} />{v.user_name}</span>)}</div>
-      )}
-    </div>
-  );
+  const row = (c) => {
+    const n = c.type === 'text' && channelId !== c.id ? unread[c.id] || 0 : 0;
+    return (
+      <div key={c.id}>
+        <Link href={`/servers/${id}/channels/${c.id}`} className={'flat dx-ch' + (channelId === c.id ? ' on' : '') + (n ? ' unread' : '')}>
+          <Ic n={c.type === 'voice' ? 'speaker' : 'hash'} s={24} /><span>{c.name}</span>
+          {n > 0 && <span className='ubadge'>{n > 99 ? '99+' : n}</span>}
+        </Link>
+        {c.type === 'voice' && vc.some((v) => v.channel_id === c.id) && (
+          <div className='dx-vu'>{vc.filter((v) => v.channel_id === c.id).map((v) => <span key={v.user_id}><Avatar name={v.user_name} size={24} />{v.user_name}</span>)}</div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className={'dx ' + (channelId ? 'has-ch' : 'no-ch')}>
       <Rail activeId={id} />
 
       <section className='dx-list'>
+        {server.banner_url && (boost?.level || 0) >= 2 && <div className='dx-banner' style={{ backgroundImage: `url(${server.banner_url})` }} />}
         <button className='flat dx-lhead' onClick={() => setSheet('menu')}>
           <b>{server.name}</b><Ic n='chevR' s={20} />
         </button>
         <div className='dx-actions'>
           <button className='flat dx-search' onClick={() => setSheet('search')}><Ic n='search' s={21} />Search</button>
           <button className='flat dx-sq' onClick={() => setSheet('invite')} aria-label='Invite'><Ic n='userplus' s={22} /></button>
+          <button className='flat dx-sq' onClick={() => setSheet('events')} aria-label='Events'><Ic n='calendar' s={22} /></button>
         </div>
         <div className='dx-chs'>
+          <button className='flat dx-boost' onClick={() => setSheet('boost')}>
+            <Ic n='boost' s={22} />Server Boosts<span className='bk'>{boost ? 'Level ' + boost.level : ''}</span>
+          </button>
           {uncategorized.map(row)}
           {cats.map((k) => (
             <div key={k.id}>
@@ -184,7 +219,7 @@ export default function ServerShell({ id, channelId }) {
         ) : (
           <>
             <div className='dx-top'>
-              <Link className='flat dx-sq dx-back' href={`/servers/${id}`} aria-label='Back'><Ic n='back' s={22} /></Link>
+              <Link className='flat dx-sq dx-back' href={`/servers/${id}`} aria-label='Back'><Ic n='back' s={22} />{unreadTotal > 0 && <span className='ubadge' style={{ position: 'absolute', transform: 'translate(14px,-14px)' }}>{unreadTotal > 99 ? '99+' : unreadTotal}</span>}</Link>
               <div className='tt'>
                 <div className='t'><Ic n={cur.type === 'voice' ? 'speaker' : 'hash'} s={22} />{cur.name}<Ic n='chevR' s={16} /></div>
                 <div className='sub'><span className='gdot' />{onlineCount} Online</div>
@@ -228,9 +263,11 @@ export default function ServerShell({ id, channelId }) {
         </div>
       </aside>
 
-      {sheet === 'menu' && <ServerMenu server={server} myMember={myMember} isManager={isManager} isOwner={isOwner} channels={channels} cats={cats} counts={{ members: members.length, bots: bots.length }} onClose={() => setSheet(null)} onInvite={() => setSheet('invite')} reload={load} go={go} />}
+      {sheet === 'menu' && <ServerMenu server={server} myMember={myMember} isManager={isManager} isOwner={isOwner} channels={channels} cats={cats} counts={{ members: members.length, bots: bots.length }} unreadTotal={unreadTotal} onMarkRead={markAllRead} onClose={() => setSheet(null)} onInvite={() => setSheet('invite')} reload={load} go={go} />}
       {sheet === 'invite' && <InviteSheet server={server} onClose={() => setSheet(null)} />}
       {sheet === 'search' && <SearchSheet server={server} channels={channels} onClose={() => setSheet(null)} onOpen={open} />}
+      {sheet === 'events' && <EventsSheet server={server} channels={channels} canManage={isManager} meId={me.id} onClose={() => setSheet(null)} />}
+      {sheet === 'boost' && <BoostSheet server={server} onClose={() => setSheet(null)} />}
       {sheet === 'user' && (
         <Sheet onClose={() => setSheet(null)}>
           <div className='sh-head'>
@@ -239,6 +276,7 @@ export default function ServerShell({ id, channelId }) {
           </div>
           <div className='sh-group'>
             <Link className='flat sh-row' href='/profile'>Edit profile</Link>
+            <Link className='flat sh-row' href='/nitro'>Nitro</Link>
             <Link className='flat sh-row' href='/settings'>Settings</Link>
             <Link className='flat sh-row' href='/dm'>Messages</Link>
             <Link className='flat sh-row' href='/dashboard'>Dashboard</Link>
